@@ -5,10 +5,13 @@ import type { ActionCallbackData, ArtifactCallbackData } from '~/lib/runtime/mes
 import { webcontainer } from '~/lib/webcontainer';
 import type { ITerminal } from '~/types/terminal';
 import { unreachable } from '~/utils/unreachable';
+import { createScopedLogger } from '~/utils/logger';
 import { EditorStore } from './editor';
 import { FilesStore, type FileMap } from './files';
 import { PreviewsStore } from './previews';
 import { TerminalStore } from './terminal';
+
+const logger = createScopedLogger('WorkbenchStore');
 
 export interface ArtifactState {
   id: string;
@@ -36,6 +39,13 @@ export class WorkbenchStore {
   unsavedFiles: WritableAtom<Set<string>> = import.meta.hot?.data.unsavedFiles ?? atom(new Set<string>());
   modifiedFiles = new Set<string>();
   artifactIdList: string[] = [];
+
+  /**
+   * When true, we are replaying a previously saved chat from history.
+   * In this mode, only essential shell commands (npm install, dev server) are executed.
+   * File actions are still written to the WebContainer since it's ephemeral.
+   */
+  reloadMode: WritableAtom<boolean> = atom(false);
 
   constructor() {
     if (import.meta.hot) {
@@ -268,7 +278,45 @@ export class WorkbenchStore {
       unreachable('Artifact not found');
     }
 
+    /**
+     * In reload mode, skip non-essential shell commands to avoid
+     * re-compiling/re-deploying contracts and wasting gas.
+     */
+    if (this.reloadMode.get() && data.action.type === 'shell') {
+      if (!this.#isEssentialShellCommand(data.action.content)) {
+        logger.debug('Reload mode: skipping non-essential shell command:', data.action.content);
+        artifact.runner.skipAction(data);
+
+        return;
+      }
+
+      logger.debug('Reload mode: running essential shell command:', data.action.content);
+    }
+
     artifact.runner.runAction(data);
+  }
+
+  /**
+   * Determines if a shell command is essential and must run even on reload.
+   * Essential commands: package install (npm install) and dev server (npm run dev).
+   * Non-essential: compilation, deployment, scaffolding, etc.
+   */
+  #isEssentialShellCommand(command: string): boolean {
+    const trimmed = command.trim().toLowerCase();
+
+    // package manager install commands
+    if (/\b(npm\s+(install|i|ci)|pnpm\s+(install|i)|yarn(\s+install)?|bun\s+(install|i))\b/.test(trimmed)) {
+      return true;
+    }
+
+    // dev server / start commands
+    if (
+      /\b(npm\s+run\s+(dev|start|preview)|npm\s+start|npx\s+vite|pnpm\s+(dev|start)|yarn\s+(dev|start))\b/.test(trimmed)
+    ) {
+      return true;
+    }
+
+    return false;
   }
 
   #getArtifact(id: string) {

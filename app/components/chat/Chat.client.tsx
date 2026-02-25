@@ -193,11 +193,26 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, initialPro
 
   useEffect(() => {
     chatStore.setKey('started', initialMessages.length > 0);
+
+    /**
+     * Enable reload mode when loading a previous chat from history.
+     * In reload mode, files are restored but non-essential shell commands
+     * (compile, deploy) are skipped to avoid wasting time and gas.
+     */
+    if (initialMessages.length > 0) {
+      workbenchStore.reloadMode.set(true);
+    }
   }, []);
 
-
-
   useEffect(() => {
+    /**
+     * When new messages arrive beyond the initial set, turn off reload mode
+     * so that new AI-generated artifacts execute all their shell commands normally.
+     */
+    if (messages.length > initialMessages.length) {
+      workbenchStore.reloadMode.set(false);
+    }
+
     parseMessages(messages, isLoading);
 
     if (messages.length > initialMessages.length) {
@@ -299,7 +314,7 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, initialPro
 
   const [messageRef, scrollRef] = useSnapScroll();
 
-  // Auto-send initial prompt from landing page
+  // auto-send initial prompt from landing page
   useEffect(() => {
     if (initialPrompt && !initialPromptSent.current) {
       initialPromptSent.current = true;

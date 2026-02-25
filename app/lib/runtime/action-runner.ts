@@ -113,6 +113,26 @@ export class ActionRunner {
       });
   }
 
+  /**
+   * Marks an action as completed without actually executing it.
+   * Used in reload mode to skip non-essential shell commands.
+   */
+  skipAction(data: ActionCallbackData) {
+    const { actionId } = data;
+    const action = this.actions.get()[actionId];
+
+    if (!action) {
+      return;
+    }
+
+    if (action.executed) {
+      return;
+    }
+
+    logger.debug(`Skipping action ${actionId}`);
+    this.#updateAction(actionId, { ...action, ...data.action, executed: true, status: 'complete' });
+  }
+
   async #executeAction(actionId: string) {
     const action = this.actions.get()[actionId];
 
