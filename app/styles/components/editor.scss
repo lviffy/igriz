@@ -28,9 +28,9 @@
 
   /* Selection */
 
-  --cm-selection-backgroundColorFocused: var(--bolt-elements-editor-selection-backgroundColor, #42b4ff);
+  --cm-selection-backgroundColorFocused: var(--bolt-elements-editor-selection-backgroundColor, #EF4444);
   --cm-selection-backgroundOpacityFocused: var(--bolt-elements-editor-selection-backgroundOpacity, 0.3);
-  --cm-selection-backgroundColorBlured: var(--bolt-elements-editor-selection-inactiveBackgroundColor, #c9e9ff);
+  --cm-selection-backgroundColorBlured: var(--bolt-elements-editor-selection-inactiveBackgroundColor, #FECACA);
   --cm-selection-backgroundOpacityBlured: var(--bolt-elements-editor-selection-inactiveBackgroundOpacity, 0.3);
 
   /* Panels */
@@ -113,7 +113,7 @@
 }
 
 html[data-theme='light'] {
-  --bolt-elements-editor-gutter-textColor: #237893;
+  --bolt-elements-editor-gutter-textColor: #B91C1C;
   --bolt-elements-editor-gutter-activeLineTextColor: var(--bolt-elements-textPrimary);
   --bolt-elements-editor-foldGutter-textColorHover: var(--bolt-elements-textPrimary);
   --bolt-elements-editor-activeLineBackgroundColor: rgb(50 53 63 / 5%);
@@ -129,7 +129,7 @@ html[data-theme='dark'] {
   --bolt-elements-editor-selection-inactiveBackgroundOpacity: 0.3;
   --bolt-elements-editor-activeLineBackgroundColor: rgb(50 53 63 / 50%);
   --bolt-elements-editor-foldGutter-textColorHover: var(--bolt-elements-textPrimary);
-  --bolt-elements-editor-matchingBracketBackgroundColor: rgba(66, 180, 255, 0.3);
+  --bolt-elements-editor-matchingBracketBackgroundColor: rgba(239, 68, 68, 0.3);
   --bolt-elements-editor-search-button-backgroundColor: theme('colors.gray.800');
   --bolt-elements-editor-search-button-backgroundColorHover: theme('colors.alpha.white.10');
 }

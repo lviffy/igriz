@@ -70,19 +70,20 @@ export function LandingPage({ onLaunch }: LandingPageProps) {
   };
 
   return (
-    <div className="landing">
-      {/* Sidebar */}
+    <>
+      {/* Sidebar - outside landing div to avoid stacking context issues */}
       <ClientOnly>{() => <Menu />}</ClientOnly>
 
-      {/* Navigation */}
-      <nav className="landing-nav">
-        <a href="/" className="landing-nav-logo ml-14" style={{ fontFamily: 'Monorama, sans-serif' }}>IGRIZ</a>
-        <div className="landing-nav-links">
-          <a href="#features" className="landing-nav-link">Features</a>
-          <a href="#usecases" className="landing-nav-link">Use Cases</a>
-          <button className="landing-nav-cta" onClick={() => onLaunch()}>Get Started</button>
-        </div>
-      </nav>
+      <div className="landing">
+        {/* Navigation */}
+        <nav className="landing-nav">
+          <a href="/" className="landing-nav-logo ml-14" style={{ fontFamily: 'Monorama, sans-serif' }}>IGRIZ</a>
+          <div className="landing-nav-links">
+            <a href="#features" className="landing-nav-link">Features</a>
+            <a href="#usecases" className="landing-nav-link">Use Cases</a>
+            <button className="landing-nav-cta" onClick={() => onLaunch()}>Get Started</button>
+          </div>
+        </nav>
 
       {/* Hero */}
       <section className="landing-hero">
@@ -210,6 +211,7 @@ export function LandingPage({ onLaunch }: LandingPageProps) {
           © 2026 IGRIZ. Build the decentralized future.
         </div>
       </footer>
-    </div>
+      </div>
+    </>
   );
 }

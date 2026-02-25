@@ -32,7 +32,11 @@ const menuVariants = {
 
 type DialogContent = { type: 'delete'; item: ChatHistoryItem } | null;
 
-export function Menu() {
+interface MenuProps {
+  showToggle?: boolean;
+}
+
+export function Menu({ showToggle = true }: MenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
   const [list, setList] = useState<ChatHistoryItem[]>([]);
   const [open, setOpen] = useState(false);
@@ -100,14 +104,16 @@ export function Menu() {
 
   return (
     <>
-      {/* Toggle button - always visible */}
-      <button
-        onClick={() => setOpen(!open)}
-        className="fixed top-4 left-4 z-max w-10 h-10 flex items-center justify-center rounded-lg bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor hover:bg-bolt-elements-background-depth-3 transition-all"
-        aria-label="Toggle sidebar"
-      >
-        <div className="i-ph:sidebar-simple-duotone text-xl text-bolt-elements-textPrimary" />
-      </button>
+      {/* Toggle button - only visible on landing page */}
+      {showToggle && (
+        <button
+          onClick={() => setOpen(!open)}
+          className="fixed top-[18px] left-4 z-max w-10 h-10 flex items-center justify-center rounded-lg bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor hover:bg-bolt-elements-background-depth-3 transition-all"
+          aria-label="Toggle sidebar"
+        >
+          <div className="i-ph:sidebar-simple-duotone text-xl text-bolt-elements-textPrimary" />
+        </button>
+      )}
 
       <motion.div
         ref={menuRef}
