@@ -41,7 +41,7 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
         }
 
         if (msg.includes('429') || msg.toLowerCase().includes('rate limit')) {
-          return 'Rate limited — wait a moment and try again';
+          return 'All API keys rate-limited — wait a moment and try again';
         }
 
         if (msg.includes('403')) {

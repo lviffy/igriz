@@ -1,6 +1,6 @@
 import { env } from 'node:process';
 import { streamText as _streamText, convertToCoreMessages } from 'ai';
-import { getAPIKey } from '~/lib/.server/llm/api-key';
+import { getAPIKey, getAllAPIKeys, rotateAPIKey, isRateLimitError } from '~/lib/.server/llm/api-key';
 import { getModel } from '~/lib/.server/llm/model';
 import { MAX_TOKENS } from './constants';
 import { getSystemPrompt, getBlockchainSystemPrompt } from './prompts';
@@ -27,15 +27,42 @@ function getQuaiPrivateKey(cloudflareEnv: Env): string | undefined {
   return env.PRIVATE_KEY_QUAI || cloudflareEnv.PRIVATE_KEY_QUAI;
 }
 
-export function streamText(messages: Messages, cloudflareEnv: Env, options?: StreamingOptions) {
+/**
+ * Attempts to stream text, automatically rotating to the next GROQ API key
+ * when a rate-limit (429) error is encountered.
+ */
+export async function streamText(messages: Messages, cloudflareEnv: Env, options?: StreamingOptions) {
   const quaiPrivateKey = getQuaiPrivateKey(cloudflareEnv);
   const systemPrompt = getSystemPrompt() + '\n\n' + getBlockchainSystemPrompt(quaiPrivateKey);
 
-  return _streamText({
-    model: getModel(getAPIKey(cloudflareEnv)),
-    system: systemPrompt,
-    maxTokens: MAX_TOKENS,
-    messages: convertToCoreMessages(messages),
-    ...options,
-  });
+  const totalKeys = getAllAPIKeys(cloudflareEnv).length;
+  let attempts = 0;
+
+  while (attempts < totalKeys) {
+    try {
+      const apiKey = getAPIKey(cloudflareEnv);
+      console.log(`[GROQ] Using API key #${attempts + 1} of ${totalKeys}`);
+
+      const result = await _streamText({
+        model: getModel(apiKey),
+        system: systemPrompt,
+        maxTokens: MAX_TOKENS,
+        messages: convertToCoreMessages(messages),
+        ...options,
+      });
+
+      return result;
+    } catch (error) {
+      if (isRateLimitError(error) && attempts + 1 < totalKeys) {
+        console.warn(`[GROQ] Rate limited on key #${attempts + 1}, rotating to next key…`);
+        rotateAPIKey(cloudflareEnv);
+        attempts++;
+      } else {
+        throw error;
+      }
+    }
+  }
+
+  // Should never reach here, but just in case
+  throw new Error('All GROQ API keys have been rate-limited. Please try again later.');
 }
