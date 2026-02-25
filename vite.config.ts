@@ -7,6 +7,9 @@ import tsconfigPaths from 'vite-tsconfig-paths';
 
 export default defineConfig((config) => {
   return {
+    resolve: {
+      dedupe: ['react', 'react-dom', 'react/jsx-runtime', 'react/jsx-dev-runtime'],
+    },
     build: {
       target: 'esnext',
     },

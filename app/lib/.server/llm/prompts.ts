@@ -317,7 +317,6 @@ export const CONTINUE_PROMPT = stripIndents`
 export const getBlockchainSystemPrompt = (
   quaiPrivateKey?: string,
   quaiRpcUrl: string = 'https://orchard.rpc.quai.network',
-  dataHavenPrivateKey?: string,
 ) => `
 <blockchain_dapp_capabilities>
   In addition to regular web development, you have the ability to build full-stack decentralized applications (dApps) with Solidity smart contracts deployed to the Quai Network blockchain.
@@ -331,24 +330,6 @@ export const getBlockchainSystemPrompt = (
     ${quaiPrivateKey ? `- The user's Quai wallet private key for contract deployment is: ${quaiPrivateKey}` : '- No Quai wallet private key has been configured. Ask the user to provide one if they want to deploy contracts.'}
   </quai_network_configuration>
 
-  <datahaven_configuration>
-    DataHaven is a decentralized storage network for permanently storing and verifying files on-chain.
-    It is used in this workflow to store smart contract audit reports, making them publicly verifiable and tamper-proof.
-    Anyone with the DataHaven file key can retrieve and verify the audit — no trust required.
-
-    - Network Name: DataHaven Testnet
-    - Chain ID: 55931
-    - RPC URL: https://services.datahaven-testnet.network/testnet
-    - WSS URL: wss://services.datahaven-testnet.network/testnet
-    - MSP URL: https://deo-dh-backend.testnet.datahaven-infra.network/
-    - Currency: MOCK
-    - Filesystem Contract: 0x0000000000000000000000000000000000000404
-    - Faucet: https://apps.datahaven.xyz/faucet
-    - SDK Packages: @storagehub-sdk/core, @storagehub-sdk/msp-client
-    - Docs: https://docs.datahaven.xyz/store-and-retrieve-data/use-storagehub-sdk/get-started/
-    ${dataHavenPrivateKey ? `- The user's DataHaven private key is: ${dataHavenPrivateKey}` : '- No DataHaven private key has been configured. Ask the user to provide one if they want to store audit reports on DataHaven. The user also needs MOCK testnet tokens from https://apps.datahaven.xyz/faucet'}
-  </datahaven_configuration>
-
   <critical_environment_constraints>
     - WebContainer runs Node.js v20 — Hardhat v2.23+ is NOT compatible (requires Node 22+). NEVER use Hardhat.
     - Instead, use the "solc" npm package (pure JavaScript Solidity compiler) for compilation.
@@ -356,8 +337,6 @@ export const getBlockchainSystemPrompt = (
     - Do NOT use ethers.js — always use quais (Quai's fork of ethers v6).
     - Do NOT include hardhat, @nomicfoundation/hardhat-toolbox, or @quai/hardhat-deploy-metadata in dependencies.
     - When importing from @openzeppelin/contracts in Solidity, add "@openzeppelin/contracts" to package.json dependencies — the compile script resolves these from node_modules.
-    - For Data Haven integration, use "@storagehub-sdk/core" and "@storagehub-sdk/msp-client" packages. The store-audit script MUST use .mjs extension (ESM) since the Data Haven SDK is ESM-only.
-    - Data Haven SDK also requires: "viem", "@polkadot/api", "@polkadot/types", "@polkadot/util-crypto", "@storagehub/types-bundle", "@storagehub/api-augment"
   </critical_environment_constraints>
 
   <dapp_development_workflow>
@@ -371,14 +350,6 @@ export const getBlockchainSystemPrompt = (
           - "solc": "0.8.20"            (Solidity compiler — MUST match pragma version)
           - "dotenv": "^16.6.1"         (environment variables)
           - "@openzeppelin/contracts": "^5.3.0"  (ONLY if using standard token/access patterns)
-          - "@storagehub-sdk/core": "latest"      (DataHaven StorageHub SDK core)
-          - "@storagehub-sdk/msp-client": "latest" (DataHaven MSP client)
-          - "@storagehub/types-bundle": "latest"   (DataHaven types)
-          - "@storagehub/api-augment": "latest"    (DataHaven API augment)
-          - "@polkadot/api": "latest"              (Polkadot API for DataHaven Substrate)
-          - "@polkadot/types": "latest"            (Polkadot types)
-          - "@polkadot/util-crypto": "latest"      (Polkadot crypto utilities)
-          - "viem": "^2.0.0"                       (EVM client for DataHaven)
           - Frontend deps: "react", "react-dom" etc.
         DevDependencies:
           - "vite": "^5.0.0"
@@ -391,10 +362,6 @@ export const getBlockchainSystemPrompt = (
         RPC_URL=${quaiRpcUrl}
         PRIVATE_KEY=${quaiPrivateKey || 'YOUR_PRIVATE_KEY_HERE'}
         CHAIN_ID=15000
-        DATAHAVEN_PRIVATE_KEY=${dataHavenPrivateKey || 'YOUR_DATAHAVEN_PRIVATE_KEY_HERE'}
-        DATAHAVEN_RPC_URL=https://services.datahaven-testnet.network/testnet
-        DATAHAVEN_WSS_URL=wss://services.datahaven-testnet.network/testnet
-        DATAHAVEN_MSP_URL=https://deo-dh-backend.testnet.datahaven-infra.network/
 
       Step 3: Create Solidity smart contract(s) in the contracts/ directory.
         - Use pragma solidity ^0.8.20; (MUST match the solc package version)
@@ -459,6 +426,7 @@ export const getBlockchainSystemPrompt = (
           language: 'Solidity',
           sources,
           settings: {
+            viaIR: true,
             optimizer: { enabled: true, runs: 200 },
             evmVersion: 'london',
             outputSelection: {
@@ -622,381 +590,21 @@ export const getBlockchainSystemPrompt = (
             process.exit(1);
           });
 
-      Step 6a: Create the smart contract audit script at scripts/audit.cjs.
-        This script performs automated static analysis on Solidity contracts and generates an audit report.
-        It has skip logic — if audit/report.json already exists with "audited": true, it exits early.
-
-        Use this EXACT audit script pattern:
-
-        const fs = require('fs');
-        const path = require('path');
-
-        // Skip if audit report already exists
-        {
-          const existingReport = path.join(__dirname, '..', 'audit', 'report.json');
-          if (fs.existsSync(existingReport)) {
-            try {
-              const existing = JSON.parse(fs.readFileSync(existingReport, 'utf8'));
-              if (existing.audited === true) {
-                console.log('Audit report already exists. Skipping. Delete audit/report.json to force re-audit.');
-                process.exit(0);
-              }
-            } catch (e) { /* proceed */ }
-          }
-        }
-
-        const contractsDir = path.join(__dirname, '..', 'contracts');
-        if (!fs.existsSync(contractsDir)) { console.error('No contracts/ directory found.'); process.exit(1); }
-        const solFiles = fs.readdirSync(contractsDir).filter(f => f.endsWith('.sol'));
-        if (solFiles.length === 0) { console.error('No .sol files found.'); process.exit(1); }
-
-        console.log('Starting smart contract audit...');
-        const findings = [];
-        function addFinding(severity, title, description, file, line) {
-          findings.push({ severity, title, description, location: file + ':' + (line || '?') });
-        }
-
-        for (const file of solFiles) {
-          const content = fs.readFileSync(path.join(contractsDir, file), 'utf8');
-          const lines = content.split('\\n');
-          console.log('Auditing ' + file + '...');
-
-          // Check: Floating pragma
-          const pragmaMatch = content.match(/pragma solidity\\s+([^;]+)/);
-          if (pragmaMatch && pragmaMatch[1].includes('^')) {
-            addFinding('LOW', 'Floating Pragma', 'Uses floating pragma ' + pragmaMatch[1].trim() + '. Lock to specific version for deployment.', file, lines.findIndex(l => l.includes('pragma solidity')) + 1);
-          }
-
-          lines.forEach((line, idx) => {
-            const ln = idx + 1;
-            const trimmed = line.trim();
-            if (trimmed.startsWith('//') || trimmed.startsWith('*')) return;
-
-            // Check: tx.origin
-            if (line.includes('tx.origin')) addFinding('HIGH', 'tx.origin Usage', 'tx.origin used for auth is vulnerable to phishing. Use msg.sender.', file, ln);
-
-            // Check: selfdestruct
-            if (line.includes('selfdestruct') || line.includes('suicide')) addFinding('HIGH', 'Selfdestruct Usage', 'selfdestruct can destroy contract. Ensure proper access control.', file, ln);
-
-            // Check: delegatecall
-            if (line.includes('delegatecall')) addFinding('MEDIUM', 'Delegatecall Usage', 'delegatecall executes code in caller context. Ensure target is trusted.', file, ln);
-
-            // Check: Unchecked low-level calls
-            if (line.includes('.call{') || line.includes('.call(') || line.includes('.send(')) {
-              const nearby = lines.slice(idx, idx + 3).join(' ');
-              if (!nearby.includes('require') && !nearby.includes('if (') && !nearby.includes('bool success'))
-                addFinding('HIGH', 'Unchecked Low-Level Call', 'Low-level call without checking return value.', file, ln);
-            }
-
-            // Check: block.timestamp
-            if (line.includes('block.timestamp')) addFinding('LOW', 'Block Timestamp Dependency', 'block.timestamp can be manipulated by miners.', file, ln);
-
-            // Check: inline assembly
-            if (trimmed.startsWith('assembly') || line.includes('assembly {')) addFinding('INFO', 'Inline Assembly', 'Inline assembly bypasses Solidity safety checks.', file, ln);
-          });
-
-          // Check: Reentrancy (state change after external call)
-          let afterCall = false;
-          lines.forEach((line, idx) => {
-            if (line.includes('.call{') || line.includes('.transfer(') || line.includes('.send(')) afterCall = true;
-            if (afterCall && line.includes('[') && line.includes(']') && line.includes('=') && !line.trim().startsWith('//'))
-              addFinding('HIGH', 'Potential Reentrancy', 'State modified after external call. Use checks-effects-interactions or ReentrancyGuard.', file, idx + 1);
-            if (line.includes('function ') && line.includes('{')) afterCall = false;
-          });
-
-          // Check: Missing events on state-changing functions
-          let curFunc = null, hasEmit = false;
-          lines.forEach((line, idx) => {
-            const m = line.match(/function\\s+(\\w+)/);
-            if (m && !line.includes('view') && !line.includes('pure') && line.includes('{')) {
-              if (curFunc && !hasEmit && !['constructor','receive','fallback'].includes(curFunc.name))
-                addFinding('INFO', 'Missing Event', 'Function \\'' + curFunc.name + '\\' modifies state without emitting an event.', file, curFunc.line);
-              curFunc = { name: m[1], line: idx + 1 }; hasEmit = false;
-            }
-            if (curFunc && line.includes('emit ')) hasEmit = true;
-          });
-          if (curFunc && !hasEmit && !['constructor','receive','fallback'].includes(curFunc.name))
-            addFinding('INFO', 'Missing Event', 'Function \\'' + curFunc.name + '\\' modifies state without emitting an event.', file, curFunc.line);
-        }
-
-        const summary = {
-          high: findings.filter(f => f.severity === 'HIGH').length,
-          medium: findings.filter(f => f.severity === 'MEDIUM').length,
-          low: findings.filter(f => f.severity === 'LOW').length,
-          info: findings.filter(f => f.severity === 'INFO').length,
-        };
-        let overallRisk = 'LOW';
-        if (summary.high > 0) overallRisk = 'HIGH';
-        else if (summary.medium > 0) overallRisk = 'MEDIUM';
-
-        // Get contract name from artifacts
-        let contractName = 'Unknown';
-        const artifactsDir = path.join(__dirname, '..', 'artifacts');
-        if (fs.existsSync(artifactsDir)) {
-          const af = fs.readdirSync(artifactsDir).filter(f => f.endsWith('.json'));
-          if (af.length > 0) contractName = af[0].replace('.json', '');
-        }
-
-        const report = { contractName, contracts: solFiles, auditDate: new Date().toISOString(), compiler: 'solc 0.8.20', findings, summary, overallRisk, audited: true };
-        const auditDir = path.join(__dirname, '..', 'audit');
-        if (!fs.existsSync(auditDir)) fs.mkdirSync(auditDir, { recursive: true });
-        fs.writeFileSync(path.join(auditDir, 'report.json'), JSON.stringify(report, null, 2));
-
-        console.log('\\nAUDIT COMPLETE | Contract: ' + contractName + ' | Findings: ' + findings.length + ' (HIGH:' + summary.high + ' MEDIUM:' + summary.medium + ' LOW:' + summary.low + ' INFO:' + summary.info + ') | Risk: ' + overallRisk);
-        console.log('Report saved to audit/report.json');
-
-      Step 6b: Create the Data Haven audit storage script at scripts/store-audit.mjs.
-        This script stores the audit report on DataHaven's decentralized storage so anyone can verify it.
-        IMPORTANT: This file MUST use .mjs extension because the DataHaven SDK is ESM-only.
-        It has skip logic — if src/contracts/auditReport.json has "stored": true with a valid fileKey, it exits early.
-        If DATAHAVEN_PRIVATE_KEY is not configured, it saves the audit locally and exits gracefully (no error).
-
-        Use this EXACT store-audit script pattern:
-
-        import { readFileSync, writeFileSync, existsSync, mkdirSync, createReadStream, statSync } from 'node:fs';
-        import { join, dirname } from 'node:path';
-        import { fileURLToPath } from 'node:url';
-        import { Readable } from 'node:stream';
-        import { config } from 'dotenv';
-
-        const __filename = fileURLToPath(import.meta.url);
-        const __dirname = dirname(__filename);
-        config({ path: join(__dirname, '..', '.env') });
-
-        const auditReportPath = join(__dirname, '..', 'src', 'contracts', 'auditReport.json');
-
-        // Skip if already stored
-        if (existsSync(auditReportPath)) {
-          try {
-            const existing = JSON.parse(readFileSync(auditReportPath, 'utf8'));
-            if (existing.stored === true && existing.dataHavenFileKey) {
-              console.log('Audit already stored on DataHaven. File Key:', existing.dataHavenFileKey);
-              console.log('Skipping. Delete src/contracts/auditReport.json to force re-upload.');
-              process.exit(0);
-            }
-          } catch (e) { /* proceed */ }
-        }
-
-        // Check audit report exists
-        const reportPath = join(__dirname, '..', 'audit', 'report.json');
-        if (!existsSync(reportPath)) { console.error('No audit report found. Run node scripts/audit.cjs first.'); process.exit(1); }
-        const auditReport = JSON.parse(readFileSync(reportPath, 'utf8'));
-        if (!auditReport.audited) { console.error('Audit report incomplete.'); process.exit(1); }
-
-        // Check DataHaven private key
-        const dhPrivateKey = process.env.DATAHAVEN_PRIVATE_KEY;
-        if (!dhPrivateKey || dhPrivateKey === 'YOUR_DATAHAVEN_PRIVATE_KEY_HERE') {
-          console.log('No DATAHAVEN_PRIVATE_KEY configured. Skipping DataHaven upload.');
-          console.log('Get testnet tokens from: https://apps.datahaven.xyz/faucet');
-          const localReport = { stored: false, dataHavenBucketId: '', dataHavenFileKey: '', contractName: auditReport.contractName, auditDate: auditReport.auditDate, findings: auditReport.findings, summary: auditReport.summary, overallRisk: auditReport.overallRisk, note: 'Configure DATAHAVEN_PRIVATE_KEY to enable DataHaven storage.' };
-          const outputDir = join(__dirname, '..', 'src', 'contracts');
-          if (!existsSync(outputDir)) mkdirSync(outputDir, { recursive: true });
-          writeFileSync(auditReportPath, JSON.stringify(localReport, null, 2));
-          console.log('Local audit data saved to src/contracts/auditReport.json');
-          process.exit(0);
-        }
-
-        // Get deployment info
-        let contractAddress = '';
-        const deployedPath = join(__dirname, '..', 'src', 'contracts', 'deployedContract.json');
-        if (existsSync(deployedPath)) { try { contractAddress = JSON.parse(readFileSync(deployedPath, 'utf8')).address || ''; } catch (e) {} }
-
-        console.log('Initializing DataHaven SDK...');
-        const { initWasm, StorageHubClient, FileManager, ReplicationLevel } = await import('@storagehub-sdk/core');
-        const { MspClient } = await import('@storagehub-sdk/msp-client');
-        const { privateKeyToAccount } = await import('viem/accounts');
-        const { createPublicClient, createWalletClient, http, defineChain } = await import('viem');
-        const { ApiPromise, WsProvider, Keyring } = await import('@polkadot/api');
-        const { types } = await import('@storagehub/types-bundle');
-        const { cryptoWaitReady } = await import('@polkadot/util-crypto');
-        await import('@storagehub/api-augment');
-
-        await initWasm();
-
-        const DH_NETWORK = {
-          id: 55931, name: 'DataHaven Testnet',
-          rpcUrl: process.env.DATAHAVEN_RPC_URL || 'https://services.datahaven-testnet.network/testnet',
-          wsUrl: process.env.DATAHAVEN_WSS_URL || 'wss://services.datahaven-testnet.network/testnet',
-          mspUrl: process.env.DATAHAVEN_MSP_URL || 'https://deo-dh-backend.testnet.datahaven-infra.network/',
-          nativeCurrency: { name: 'Mock', symbol: 'MOCK', decimals: 18 },
-          filesystemContractAddress: '0x0000000000000000000000000000000000000404',
-        };
-
-        const chain = defineChain({ id: DH_NETWORK.id, name: DH_NETWORK.name, nativeCurrency: DH_NETWORK.nativeCurrency, rpcUrls: { default: { http: [DH_NETWORK.rpcUrl] } } });
-        const account = privateKeyToAccount(dhPrivateKey);
-        const address = account.address;
-        await cryptoWaitReady();
-        const walletKeyring = new Keyring({ type: 'ethereum' });
-        const signer = walletKeyring.addFromUri(dhPrivateKey);
-
-        const walletClient = createWalletClient({ chain, account, transport: http(DH_NETWORK.rpcUrl) });
-        const publicClient = createPublicClient({ chain, transport: http(DH_NETWORK.rpcUrl) });
-        const storageHubClient = new StorageHubClient({ rpcUrl: DH_NETWORK.rpcUrl, chain, walletClient, filesystemContractAddress: DH_NETWORK.filesystemContractAddress });
-
-        const wsProvider = new WsProvider(DH_NETWORK.wsUrl);
-        const polkadotApi = await ApiPromise.create({ provider: wsProvider, typesBundle: types, noInitWarn: true });
-
-        let sessionToken;
-        const sessionProvider = async () => sessionToken ? { token: sessionToken, user: { address } } : undefined;
-        const mspClient = await MspClient.connect({ baseUrl: DH_NETWORK.mspUrl }, sessionProvider);
-
-        const mspHealth = await mspClient.info.getHealth();
-        console.log('MSP Health:', mspHealth.status);
-
-        async function storeAuditOnDataHaven() {
-          const mspInfo = await mspClient.info.getInfo();
-          const valueProps = await mspClient.info.getValuePropositions();
-          if (!valueProps?.length) throw new Error('No MSP value propositions available');
-          const valuePropId = valueProps[0].id;
-
-          // Create bucket
-          const bucketName = 'audit-' + auditReport.contractName.toLowerCase().replace(/[^a-z0-9]/g, '-') + '-' + Date.now();
-          const bucketId = await storageHubClient.deriveBucketId(address, bucketName);
-          console.log('Bucket ID:', bucketId);
-
-          const bucketBefore = await polkadotApi.query.providers.buckets(bucketId);
-          if (bucketBefore.isEmpty) {
-            const txHash = await storageHubClient.createBucket(mspInfo.mspId, bucketName, false, valuePropId);
-            if (!txHash) throw new Error('createBucket() returned no tx hash');
-            const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
-            if (receipt.status !== 'success') throw new Error('Bucket creation failed');
-            console.log('Bucket created');
-          }
-
-          // Wait for backend
-          for (let i = 0; i < 10; i++) {
-            try { const b = await mspClient.buckets.getBucket(bucketId); if (b) break; } catch (e) {
-              if (i === 9) throw new Error('Bucket not indexed by MSP backend');
-              console.log('Waiting for bucket indexing...'); await new Promise(r => setTimeout(r, 2000));
-            }
-          }
-
-          // Prepare audit file
-          const auditData = JSON.stringify({ ...auditReport, contractAddress, storedOnDataHaven: true, storageTimestamp: new Date().toISOString() }, null, 2);
-          const tempFile = join(__dirname, '..', 'audit', 'dh-upload.json');
-          writeFileSync(tempFile, auditData);
-          const fileName = auditReport.contractName + '-audit.json';
-          const fileSize = statSync(tempFile).size;
-          const fileManager = new FileManager({ size: fileSize, stream: () => Readable.toWeb(createReadStream(tempFile)) });
-          const fingerprint = await fileManager.getFingerprint();
-          console.log('Fingerprint:', fingerprint.toHex());
-
-          // Issue storage request
-          const { mspId, multiaddresses } = await mspClient.info.getInfo();
-          const peerIds = (multiaddresses || []).map(a => a.split('/p2p/').pop()).filter(Boolean);
-          if (!peerIds.length) throw new Error('No MSP peer IDs');
-          const srTxHash = await storageHubClient.issueStorageRequest(bucketId, fileName, fingerprint.toHex(), BigInt(fileSize), mspId, peerIds, ReplicationLevel.Custom, 1);
-          if (!srTxHash) throw new Error('issueStorageRequest() returned no tx hash');
-          const srReceipt = await publicClient.waitForTransactionReceipt({ hash: srTxHash });
-          if (srReceipt.status !== 'success') throw new Error('Storage request failed');
-          console.log('Storage request confirmed');
-
-          // Compute file key
-          const { TypeRegistry } = await import('@polkadot/types');
-          const registry = new TypeRegistry();
-          const owner = registry.createType('AccountId20', account.address);
-          const bucketIdH256 = registry.createType('H256', bucketId);
-          const fileKey = await fileManager.computeFileKey(owner, bucketIdH256, fileName);
-          console.log('File key:', fileKey.toHex());
-
-          // Authenticate & upload
-          const siweSession = await mspClient.auth.SIWE(walletClient, 'localhost', 'http://localhost');
-          sessionToken = siweSession.token;
-          console.log('Authenticated with MSP');
-          const uploadReceipt = await mspClient.files.uploadFile(bucketId, fileKey.toHex(), await fileManager.getFileBlob(), address, fileName);
-          if (uploadReceipt.status !== 'upload_successful') throw new Error('Upload failed: ' + uploadReceipt.status);
-          console.log('Upload successful');
-
-          // Wait for MSP confirmation on-chain
-          for (let i = 0; i < 20; i++) {
-            const req = await polkadotApi.query.fileSystem.storageRequests(fileKey);
-            if (req.isNone) throw new Error('Storage request removed from chain');
-            const data = req.unwrap();
-            if (data.mspStatus.isAcceptedNewFile || data.mspStatus.isAcceptedExistingFile) { console.log('MSP confirmed on-chain'); break; }
-            if (i === 19) throw new Error('Timed out waiting for MSP confirmation');
-            await new Promise(r => setTimeout(r, 2000));
-          }
-
-          // Wait for backend to index file
-          for (let i = 0; i < 30; i++) {
-            try {
-              const fi = await mspClient.files.getFileInfo(bucketId, fileKey.toHex());
-              if (fi.status === 'ready') { console.log('File ready in MSP backend'); break; }
-              if (['revoked','rejected','expired'].includes(fi.status)) throw new Error('File ' + fi.status);
-              console.log('File status: ' + fi.status);
-            } catch (e) { if (e?.status !== 404 && !e?.body?.error?.includes('Not found')) throw e; }
-            if (i === 29) throw new Error('Timed out waiting for file in backend');
-            await new Promise(r => setTimeout(r, 5000));
-          }
-
-          return { bucketId, fileKey: fileKey.toHex(), bucketName, fileName };
-        }
-
-        try {
-          const result = await storeAuditOnDataHaven();
-          const auditInfo = {
-            stored: true, dataHavenBucketId: result.bucketId, dataHavenFileKey: result.fileKey,
-            bucketName: result.bucketName, fileName: result.fileName,
-            contractName: auditReport.contractName, contractAddress,
-            auditDate: auditReport.auditDate, findings: auditReport.findings,
-            summary: auditReport.summary, overallRisk: auditReport.overallRisk,
-            storedAt: new Date().toISOString(),
-          };
-          const outputDir = join(__dirname, '..', 'src', 'contracts');
-          if (!existsSync(outputDir)) mkdirSync(outputDir, { recursive: true });
-          writeFileSync(auditReportPath, JSON.stringify(auditInfo, null, 2));
-          console.log('\\nAUDIT STORED ON DATAHAVEN | Bucket: ' + result.bucketId + ' | FileKey: ' + result.fileKey);
-          console.log('Anyone can verify this audit using the file key above.');
-          console.log('Reference saved to src/contracts/auditReport.json');
-        } catch (error) {
-          console.error('DataHaven upload failed:', error.message || error);
-          const localReport = { stored: false, dataHavenBucketId: '', dataHavenFileKey: '', contractName: auditReport.contractName, contractAddress, auditDate: auditReport.auditDate, findings: auditReport.findings, summary: auditReport.summary, overallRisk: auditReport.overallRisk, error: error.message || 'Upload failed' };
-          const outputDir = join(__dirname, '..', 'src', 'contracts');
-          if (!existsSync(outputDir)) mkdirSync(outputDir, { recursive: true });
-          writeFileSync(auditReportPath, JSON.stringify(localReport, null, 2));
-          console.log('Local audit data saved (without DataHaven storage).');
-        } finally {
-          await polkadotApi.disconnect();
-          process.exit(0);
-        }
-
-      Step 6c: Create a PLACEHOLDER audit report file at src/contracts/auditReport.json.
-        This file MUST be created as a <boltAction type="file"> so the frontend can always import it.
-        The store-audit script will overwrite it with real data after storing the audit on DataHaven.
-
-        {
-          "stored": false,
-          "dataHavenBucketId": "",
-          "dataHavenFileKey": "",
-          "contractName": "",
-          "contractAddress": "",
-          "auditDate": "",
-          "findings": [],
-          "summary": { "high": 0, "medium": 0, "low": 0, "info": 0 },
-          "overallRisk": ""
-        }
-
       Step 7: Run these shell commands IN THIS EXACT ORDER (each as a SEPARATE boltAction type="shell"):
         a. npm install
         b. node scripts/compile.cjs
         c. node scripts/deploy.cjs
-        d. node scripts/audit.cjs
-        e. node scripts/store-audit.mjs
 
       CRITICAL: Each shell command MUST be its own separate <boltAction type="shell"> tag. Do NOT chain them with && in a single action.
 
-      SMART SKIP BEHAVIOR: All scripts include automatic skip logic:
+      SMART SKIP BEHAVIOR: The compile and deploy scripts include automatic skip logic:
         - compile.cjs checks if artifacts/ already contains compiled JSON files. If so, it skips recompilation.
         - deploy.cjs checks if src/contracts/deployedContract.json has "deployed": true with a valid address. If so, it skips re-deployment to save gas.
-        - audit.cjs checks if audit/report.json already exists with "audited": true. If so, it skips re-auditing.
-        - store-audit.mjs checks if src/contracts/auditReport.json has "stored": true with a valid fileKey. If so, it skips re-uploading to DataHaven.
-        - This means when reopening a previously built project, ALL scripts detect existing results and exit early — no wasted gas, redundant audits, or duplicate DataHaven uploads.
+        - This means when reopening a previously built project, both scripts detect existing results and exit early — no wasted gas.
         - To force recompilation: delete the artifacts/ folder.
         - To force re-deployment: delete src/contracts/deployedContract.json or set "deployed" to false in it.
-        - To force re-audit: delete audit/report.json.
-        - To force re-upload to DataHaven: delete src/contracts/auditReport.json or set "stored" to false in it.
 
-      After Step 7 completes, the contract is deployed, audited, and the audit report is stored on DataHaven. The files src/contracts/deployedContract.json and src/contracts/auditReport.json contain the real deployment and audit data.
+      After Step 7 completes, the contract is compiled and deployed. The file src/contracts/deployedContract.json contains the real deployment data.
 
     PHASE 2 — Frontend Development & Blockchain Integration (ONLY after Phase 1 shell commands have been defined):
 
@@ -1069,10 +677,10 @@ export const getBlockchainSystemPrompt = (
         npm run dev
 
     CRITICAL ORDERING RULES:
-      - ALL contract files, compile scripts, deploy scripts, audit scripts, Data Haven scripts, AND placeholder JSON files MUST be created BEFORE npm install
-      - The placeholders src/contracts/deployedContract.json AND src/contracts/auditReport.json MUST be created as file actions BEFORE the npm install shell command
-      - npm install → compile → deploy → audit → store-audit MUST run BEFORE any frontend source files (blockchain.js, App.jsx, etc.) are created
-      - The artifact action order MUST be: package.json → .env → contracts/*.sol → scripts/compile.cjs → scripts/deploy.cjs → scripts/audit.cjs → scripts/store-audit.mjs → src/contracts/deployedContract.json (placeholder) → src/contracts/auditReport.json (placeholder) → (shell: npm install) → (shell: node scripts/compile.cjs) → (shell: node scripts/deploy.cjs) → (shell: node scripts/audit.cjs) → (shell: node scripts/store-audit.mjs) → frontend source files (vite.config.js, index.html, blockchain.js, App.jsx, etc.) → (shell: npm run dev)
+      - ALL contract files, compile scripts, deploy scripts, AND placeholder JSON files MUST be created BEFORE npm install
+      - The placeholder src/contracts/deployedContract.json MUST be created as a file action BEFORE the npm install shell command
+      - npm install → compile → deploy MUST run BEFORE any frontend source files (blockchain.js, App.jsx, etc.) are created
+      - The artifact action order MUST be: package.json → .env → contracts/*.sol → scripts/compile.cjs → scripts/deploy.cjs → src/contracts/deployedContract.json (placeholder) → (shell: npm install) → (shell: node scripts/compile.cjs) → (shell: node scripts/deploy.cjs) → frontend source files (vite.config.js, index.html, blockchain.js, App.jsx, etc.) → (shell: npm run dev)
       - Each shell command MUST be a separate <boltAction type="shell">. Do NOT chain with &&.
   </dapp_development_workflow>
 
@@ -1129,15 +737,7 @@ export const getBlockchainSystemPrompt = (
                 "react": "^18.2.0",
                 "react-dom": "^18.2.0",
                 "@openzeppelin/contracts": "^5.3.0",
-                "dotenv": "^16.6.1",
-                "@storagehub-sdk/core": "latest",
-                "@storagehub-sdk/msp-client": "latest",
-                "@storagehub/types-bundle": "latest",
-                "@storagehub/api-augment": "latest",
-                "@polkadot/api": "latest",
-                "@polkadot/types": "latest",
-                "@polkadot/util-crypto": "latest",
-                "viem": "^2.0.0"
+                "dotenv": "^16.6.1"
               },
               "devDependencies": {
                 "@vitejs/plugin-react": "^4.2.0",
@@ -1150,10 +750,6 @@ export const getBlockchainSystemPrompt = (
             RPC_URL=https://orchard.rpc.quai.network
             PRIVATE_KEY=${quaiPrivateKey || 'YOUR_KEY'}
             CHAIN_ID=15000
-            DATAHAVEN_PRIVATE_KEY=${dataHavenPrivateKey || 'YOUR_DATAHAVEN_KEY'}
-            DATAHAVEN_RPC_URL=https://services.datahaven-testnet.network/testnet
-            DATAHAVEN_WSS_URL=wss://services.datahaven-testnet.network/testnet
-            DATAHAVEN_MSP_URL=https://deo-dh-backend.testnet.datahaven-infra.network/
           </boltAction>
 
           <boltAction type="file" filePath="contracts/FaucetToken.sol">
@@ -1180,28 +776,6 @@ export const getBlockchainSystemPrompt = (
             }
           </boltAction>
 
-          <boltAction type="file" filePath="scripts/audit.cjs">
-            // Smart contract audit script with static analysis...
-          </boltAction>
-
-          <boltAction type="file" filePath="scripts/store-audit.mjs">
-            // DataHaven audit storage script using StorageHub SDK...
-          </boltAction>
-
-          <boltAction type="file" filePath="src/contracts/auditReport.json">
-            {
-              "stored": false,
-              "dataHavenBucketId": "",
-              "dataHavenFileKey": "",
-              "contractName": "",
-              "contractAddress": "",
-              "auditDate": "",
-              "findings": [],
-              "summary": { "high": 0, "medium": 0, "low": 0, "info": 0 },
-              "overallRisk": ""
-            }
-          </boltAction>
-
           <boltAction type="shell">
             npm install
           </boltAction>
@@ -1212,14 +786,6 @@ export const getBlockchainSystemPrompt = (
 
           <boltAction type="shell">
             node scripts/deploy.cjs
-          </boltAction>
-
-          <boltAction type="shell">
-            node scripts/audit.cjs
-          </boltAction>
-
-          <boltAction type="shell">
-            node scripts/store-audit.mjs
           </boltAction>
 
           <boltAction type="file" filePath="index.html">

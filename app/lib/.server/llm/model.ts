@@ -1,25 +1,23 @@
-import { createOpenRouter } from '@openrouter/ai-sdk-provider';
+import { createGroq } from '@ai-sdk/groq';
 
-const DEFAULT_MODEL = 'google/gemini-2.5-flash';
+// const DEFAULT_MODEL = 'qwen/qwen3-32b';
+const DEFAULT_MODEL = 'moonshotai/kimi-k2-instruct-0905';
 
 export function getModel(apiKey: string, model?: string) {
-  const openRouter = createOpenRouter({
+  const groq = createGroq({
     apiKey,
   });
 
-  return openRouter(model || DEFAULT_MODEL);
+  return groq(model || DEFAULT_MODEL);
 }
 
 // eslint-disable-next-line @blitz/comment-syntax
 /*
- * Default model - change this to any OpenRouter-supported model
+ * Default model - change this to any Groq-supported model
  * Popular options:
- *   google/gemini-2.0-flash-001          (very cheap, fast)
- *   google/gemini-2.5-flash              (powerful, affordable)
- *   deepseek/deepseek-chat             (very cheap, capable)
- *   meta-llama/llama-3.1-70b-instruct  (open-source, solid)
- *   mistralai/mistral-large-latest     (balanced)
- *   x-ai/grok-2-1212                   (Grok)
- *   anthropic/claude-3.5-sonnet        (if you still want Claude)
- * Full list: https://openrouter.ai/models
+ *   llama-3.3-70b-versatile         (powerful, fast)
+ *   llama-3.1-8b-instant            (very fast, lightweight)
+ *   mixtral-8x7b-32768              (Mixtral MoE)
+ *   gemma2-9b-it                    (Google Gemma 2)
+ * Full list: https://console.groq.com/docs/models
  */

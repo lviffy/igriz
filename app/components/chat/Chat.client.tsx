@@ -82,11 +82,104 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, initialPro
   const MAX_AUTO_FIX_ATTEMPTS = 3;
   const isAutoFixingRef = useRef(false);
 
+  // check API key validity on mount
+  useEffect(() => {
+    fetch('/api/key-check')
+      .then(
+        (res) =>
+          res.json() as Promise<{
+            valid: boolean;
+            error?: string;
+            limitRemaining?: number | null;
+            isFreeTier?: boolean;
+            usage?: number;
+          }>,
+      )
+      .then((data) => {
+        if (!data.valid) {
+          toast.error(`API Key Error: ${data.error || 'Invalid key'}`, { autoClose: false });
+        } else if (data.limitRemaining !== null && data.limitRemaining !== undefined && data.limitRemaining <= 0) {
+          toast.error('Groq: Rate limit or quota exceeded. Check console.groq.com', { autoClose: false });
+        } else if (data.limitRemaining !== null && data.limitRemaining !== undefined && data.limitRemaining < 0.5) {
+          toast.warn(`Groq: Low quota remaining. Consider checking console.groq.com`, {
+            autoClose: 8000,
+          });
+        }
+      })
+      .catch(() => {
+        // silently ignore — network issues shouldn't block the UI
+      });
+  }, []);
+
+  // stores the last server error detail so onError can use it
+  const lastServerError = useRef<string | null>(null);
+
   const { messages, isLoading, input, handleInputChange, setInput, stop, append } = useChat({
     api: '/api/chat',
+    onResponse: async (response) => {
+      // intercept non-OK responses before the SDK turns them into a generic error
+      if (!response.ok) {
+        try {
+          const cloned = response.clone();
+          const body = (await cloned.json()) as { error?: string };
+
+          if (body?.error) {
+            lastServerError.current = body.error;
+          } else {
+            lastServerError.current = `Groq error ${response.status}: ${response.statusText}`;
+          }
+        } catch {
+          lastServerError.current = `Groq error ${response.status}: ${response.statusText}`;
+        }
+      } else {
+        lastServerError.current = null;
+      }
+    },
     onError: (error) => {
       logger.error('Request failed\n\n', error);
-      toast.error('There was an error processing your request');
+
+      // use the detailed error captured in onResponse, fall back to generic parsing
+      let detail = lastServerError.current || '';
+
+      if (!detail) {
+        const msg = error.message || '';
+
+        try {
+          const parsed = JSON.parse(msg);
+
+          if (parsed.error) {
+            detail = parsed.error;
+          }
+        } catch {
+          // not JSON — check for common patterns
+          if (
+            msg.includes('401') ||
+            msg.toLowerCase().includes('invalid api key') ||
+            msg.toLowerCase().includes('unauthorized')
+          ) {
+            detail = 'Invalid API Key — check your GROQ_API_KEY in .env.local';
+          } else if (
+            msg.includes('402') ||
+            msg.toLowerCase().includes('insufficient') ||
+            msg.toLowerCase().includes('credit')
+          ) {
+            detail = 'Insufficient credits — check your Groq usage at console.groq.com';
+          } else if (msg.includes('429') || msg.toLowerCase().includes('rate limit')) {
+            detail = 'Rate limited — wait a moment and try again';
+          } else if (msg.length > 0 && msg.length < 300) {
+            detail = msg;
+          }
+        }
+      }
+
+      if (!detail) {
+        detail = 'There was an error processing your request';
+      }
+
+      // reset for next request
+      lastServerError.current = null;
+
+      toast.error(detail, { autoClose: 8000 });
     },
     onFinish: () => {
       logger.debug('Finished streaming');

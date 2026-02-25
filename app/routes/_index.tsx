@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import { json, type MetaFunction } from '@remix-run/cloudflare';
+import { useLoaderData } from '@remix-run/react';
 import { ClientOnly } from 'remix-utils/client-only';
 import { BaseChat } from '~/components/chat/BaseChat';
 import { Chat } from '~/components/chat/Chat.client';
@@ -13,7 +14,8 @@ export const meta: MetaFunction = () => {
 export const loader = () => json({});
 
 export default function Index() {
-  const [showChat, setShowChat] = useState(false);
+  const { id } = useLoaderData<{ id?: string }>();
+  const [showChat, setShowChat] = useState(!!id);
   const [initialPrompt, setInitialPrompt] = useState<string | undefined>();
 
   const handleLaunch = useCallback((prompt?: string) => {
