@@ -1,4 +1,5 @@
 import { env } from 'node:process';
+import { AI_PROVIDERS, DEFAULT_PROVIDER, LMSTUDIO_BASE_URL, type AIProvider } from './provider';
 
 export function getAPIKey(cloudflareEnv: Env) {
   /**
@@ -12,4 +13,46 @@ export function getAPIKey(cloudflareEnv: Env) {
   }
 
   return apiKey;
+}
+
+export function getProviderFromEnv(cloudflareEnv: Env): AIProvider {
+  const provider = env.AI_PROVIDER || cloudflareEnv.AI_PROVIDER || DEFAULT_PROVIDER;
+  
+  if (provider !== AI_PROVIDERS.OPENROUTER && provider !== AI_PROVIDERS.LMSTUDIO) {
+    console.warn(`Unknown AI provider "${provider}", falling back to ${DEFAULT_PROVIDER}`);
+    return DEFAULT_PROVIDER;
+  }
+  
+  return provider as AIProvider;
+}
+
+export interface ProviderConfig {
+  provider: AIProvider;
+  apiKey?: string;
+  baseUrl?: string;
+  modelId?: string;
+}
+
+export function getProviderConfig(cloudflareEnv: Env): ProviderConfig {
+  const provider = getProviderFromEnv(cloudflareEnv);
+  
+  if (provider === AI_PROVIDERS.OPENROUTER) {
+    return {
+      provider: AI_PROVIDERS.OPENROUTER,
+      apiKey: getAPIKey(cloudflareEnv),
+    };
+  }
+  
+  if (provider === AI_PROVIDERS.LMSTUDIO) {
+    const baseUrl = env.LMSTUDIO_BASE_URL || cloudflareEnv.LMSTUDIO_BASE_URL || LMSTUDIO_BASE_URL;
+    const modelId = env.LMSTUDIO_MODEL_ID || cloudflareEnv.LMSTUDIO_MODEL_ID;
+    
+    return {
+      provider: AI_PROVIDERS.LMSTUDIO,
+      baseUrl,
+      modelId,
+    };
+  }
+  
+  throw new Error(`Unsupported AI provider: ${provider}`);
 }

@@ -5,6 +5,7 @@ import type { BoltAction } from '~/types/actions';
 import { createScopedLogger } from '~/utils/logger';
 import { unreachable } from '~/utils/unreachable';
 import type { ActionCallbackData } from './message-parser';
+import { detectErrors, reportError, autoHealEnabled } from './error-monitor';
 
 const logger = createScopedLogger('ActionRunner');
 
@@ -136,10 +137,24 @@ export class ActionRunner {
       process.kill();
     });
 
+    // Capture output for error monitoring
+    let outputBuffer = '';
+    const AUTO_HEAL_ENABLED = autoHealEnabled.get();
+
     process.output.pipeTo(
       new WritableStream({
         write(data) {
           console.log(data);
+          
+          // Accumulate output for error detection
+          if (AUTO_HEAL_ENABLED) {
+            outputBuffer += data;
+            
+            // Keep buffer size reasonable (last 5000 chars)
+            if (outputBuffer.length > 5000) {
+              outputBuffer = outputBuffer.slice(-5000);
+            }
+          }
         },
       }),
     );
@@ -147,6 +162,16 @@ export class ActionRunner {
     const exitCode = await process.exit;
 
     logger.debug(`Process terminated with code ${exitCode}`);
+
+    // Check for errors in output if auto-heal is enabled
+    if (AUTO_HEAL_ENABLED && outputBuffer) {
+      const detectedError = detectErrors(outputBuffer, action.content);
+      
+      if (detectedError) {
+        logger.warn('Error detected in command output, reporting for auto-healing');
+        reportError(detectedError);
+      }
+    }
   }
 
   async #runFileAction(action: ActionState) {
