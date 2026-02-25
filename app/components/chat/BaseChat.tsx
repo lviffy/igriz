@@ -28,11 +28,11 @@ interface BaseChatProps {
 }
 
 const EXAMPLE_PROMPTS = [
-  { text: 'Build a todo app in React using Tailwind' },
-  { text: 'Build a simple blog using Astro' },
-  { text: 'Create a cookie consent form using Material UI' },
-  { text: 'Make a space invaders game' },
-  { text: 'How do I center a div?' },
+  { text: 'Create an ERC-20 token with mint and burn functions' },
+  { text: 'Build an NFT marketplace with listing and bidding' },
+  { text: 'Create a DeFi staking dashboard with APY tracking' },
+  { text: 'Build a DAO voting system with proposal management' },
+  { text: 'How do I connect a wallet using ethers.js?' },
 ];
 
 const TEXTAREA_MIN_HEIGHT = 76;
@@ -130,7 +130,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                       minHeight: TEXTAREA_MIN_HEIGHT,
                       maxHeight: TEXTAREA_MAX_HEIGHT,
                     }}
-                    placeholder="How can Bolt help you today?"
+                    placeholder="How can Igriz help you today?"
                     translate="no"
                   />
                   <ClientOnly>

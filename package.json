@@ -1,6 +1,6 @@
 {
-  "name": "bolt",
-  "description": "StackBlitz AI Agent",
+  "name": "igriz",
+  "description": "Igriz - AI-Powered dApp Builder",
   "private": true,
   "license": "MIT",
   "packageManager": "pnpm@9.4.0",
