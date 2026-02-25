@@ -380,6 +380,17 @@ export const getBlockchainSystemPrompt = (
         const fs = require('fs');
         const path = require('path');
 
+        // Skip compilation if artifacts already exist (avoids redundant work on project reopen)
+        const artifactsDir = path.join(__dirname, '..', 'artifacts');
+        if (fs.existsSync(artifactsDir)) {
+          const existingArtifacts = fs.readdirSync(artifactsDir).filter(f => f.endsWith('.json'));
+          if (existingArtifacts.length > 0) {
+            console.log('Compiled artifacts already exist:', existingArtifacts.join(', '));
+            console.log('Skipping compilation. Delete the artifacts/ folder to force recompile.');
+            process.exit(0);
+          }
+        }
+
         function findImport(importPath) {
           const possiblePaths = [
             path.join(__dirname, '..', 'node_modules', importPath),
@@ -508,6 +519,21 @@ export const getBlockchainSystemPrompt = (
         }
 
         async function deploy() {
+          // Check if contract is already deployed (skip re-deployment to save gas)
+          const deployedContractPath = path.join(__dirname, '..', 'src', 'contracts', 'deployedContract.json');
+          if (fs.existsSync(deployedContractPath)) {
+            try {
+              const existing = JSON.parse(fs.readFileSync(deployedContractPath, 'utf8'));
+              if (existing.deployed === true && existing.address && existing.address !== '') {
+                console.log('Contract already deployed at:', existing.address);
+                console.log('Skipping deployment. Delete src/contracts/deployedContract.json to force re-deploy.');
+                process.exit(0);
+              }
+            } catch (e) {
+              // If file is invalid JSON, proceed with deployment
+            }
+          }
+
           console.log('Connecting to Quai Network...');
           const provider = new quais.JsonRpcProvider(process.env.RPC_URL, undefined, { usePathing: true });
           const wallet = new quais.Wallet(process.env.PRIVATE_KEY, provider);
@@ -561,6 +587,14 @@ export const getBlockchainSystemPrompt = (
         c. node scripts/deploy.cjs
 
       CRITICAL: Each shell command MUST be its own separate <boltAction type="shell"> tag. Do NOT chain them with && in a single action.
+
+      SMART SKIP BEHAVIOR: Both compile.cjs and deploy.cjs include automatic skip logic:
+        - compile.cjs checks if artifacts/ already contains compiled JSON files. If so, it skips recompilation.
+        - deploy.cjs checks if src/contracts/deployedContract.json has "deployed": true with a valid address. If so, it skips re-deployment to save gas.
+        - This means when reopening a previously built project, the scripts will detect existing artifacts/deployments and exit early — no wasted gas or redundant work.
+        - To force recompilation: delete the artifacts/ folder.
+        - To force re-deployment: delete src/contracts/deployedContract.json or set "deployed" to false in it.
+
       After Step 7 completes, the contract is deployed and src/contracts/deployedContract.json contains the real address and ABI.
 
     PHASE 2 — Frontend Development & Blockchain Integration (ONLY after Phase 1 shell commands have been defined):
