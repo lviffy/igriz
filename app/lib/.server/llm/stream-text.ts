@@ -27,9 +27,14 @@ function getQuaiPrivateKey(cloudflareEnv: Env): string | undefined {
   return env.PRIVATE_KEY_QUAI || cloudflareEnv.PRIVATE_KEY_QUAI;
 }
 
+function getDataHavenPrivateKey(cloudflareEnv: Env): string | undefined {
+  return env.PRIVATE_KEY_DATAHAVEN || cloudflareEnv.PRIVATE_KEY_DATAHAVEN;
+}
+
 export function streamText(messages: Messages, cloudflareEnv: Env, options?: StreamingOptions) {
   const quaiPrivateKey = getQuaiPrivateKey(cloudflareEnv);
-  const systemPrompt = getSystemPrompt() + '\n\n' + getBlockchainSystemPrompt(quaiPrivateKey);
+  const dataHavenPrivateKey = getDataHavenPrivateKey(cloudflareEnv);
+  const systemPrompt = getSystemPrompt() + '\n\n' + getBlockchainSystemPrompt(quaiPrivateKey, undefined, dataHavenPrivateKey);
 
   return _streamText({
     model: getModel(getAPIKey(cloudflareEnv)),
