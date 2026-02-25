@@ -227,6 +227,9 @@ export default defineConfig({
         },
       },
     },
+    fontFamily: {
+      monorama: ['Monorama', 'monospace'],
+    },
   },
   transformers: [transformerDirectives()],
   presets: [

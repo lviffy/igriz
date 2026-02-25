@@ -20,9 +20,9 @@ export function Header() {
     >
       <div className="flex items-center gap-2 z-logo text-bolt-elements-textPrimary cursor-pointer">
         <div className="i-ph:sidebar-simple-duotone text-xl" />
-        <a href="/" className="text-2xl font-semibold text-accent flex items-center">
+        <a href="/" className="text-2xl text-accent flex items-center">
           {/* <span className="i-bolt:logo-text?mask w-[46px] inline-block" /> */}
-          <span className="inline-block">Igriz</span>
+          <span className="inline-block" style={{ fontFamily: 'Monorama, sans-serif' }}>IGRIZ</span>
         </a>
       </div>
       <span className="flex-1 px-4 truncate text-center text-bolt-elements-textPrimary">

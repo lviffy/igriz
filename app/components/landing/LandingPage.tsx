@@ -71,7 +71,7 @@ export function LandingPage({ onLaunch }: LandingPageProps) {
     <div className="landing">
       {/* Navigation */}
       <nav className="landing-nav">
-        <a href="/" className="landing-nav-logo">Igriz</a>
+        <a href="/" className="landing-nav-logo" style={{ fontFamily: 'Monorama, sans-serif' }}>IGRIZ</a>
         <div className="landing-nav-links">
           <a href="#features" className="landing-nav-link">Features</a>
           <a href="#usecases" className="landing-nav-link">Use Cases</a>
@@ -124,7 +124,7 @@ export function LandingPage({ onLaunch }: LandingPageProps) {
       {/* Features - Bento Grid */}
       <section id="features" className="landing-features">
         <div className="landing-features-header">
-          <h2 className="landing-features-title">Everything you need to ship</h2>
+          <h2 className="landing-features-title" style={{ fontFamily: 'Monorama, sans-serif' }}>Everything you need to ship</h2>
           <p className="landing-features-subtitle">
             From smart contracts to deployed frontends, Igriz handles every layer of the stack.
           </p>
@@ -145,7 +145,7 @@ export function LandingPage({ onLaunch }: LandingPageProps) {
       {/* Use cases */}
       <section id="usecases" className="landing-usecases">
         <div className="landing-usecases-header">
-          <h2 className="landing-usecases-title">Built for every builder</h2>
+          <h2 className="landing-usecases-title" style={{ fontFamily: 'Monorama, sans-serif' }}>Built for every builder</h2>
           <p className="landing-usecases-subtitle">
             Whether you're a solo dev or a team, Igriz accelerates your workflow.
           </p>
@@ -162,7 +162,7 @@ export function LandingPage({ onLaunch }: LandingPageProps) {
 
       {/* Bottom CTA */}
       <section className="landing-bottom-cta">
-        <h2 className="landing-bottom-cta-title">Ready to build something on-chain?</h2>
+        <h2 className="landing-bottom-cta-title" style={{ fontFamily: 'Monorama, sans-serif' }}>Ready to build something on-chain?</h2>
         <button className="landing-bottom-cta-btn" onClick={() => onLaunch()}>
           Launch Builder →
         </button>
@@ -172,7 +172,7 @@ export function LandingPage({ onLaunch }: LandingPageProps) {
       <footer className="landing-footer">
         <div className="landing-footer-grid">
           <div>
-            <div className="landing-footer-brand">Igriz</div>
+            <div className="landing-footer-brand" style={{ fontFamily: 'Monorama, sans-serif' }}>IGRIZ</div>
             <div className="landing-footer-tagline">
               AI-powered dApp builder.<br />
               Ship Web3 apps in minutes.
@@ -202,7 +202,7 @@ export function LandingPage({ onLaunch }: LandingPageProps) {
           </div>
         </div>
         <div className="landing-footer-bottom">
-          © 2026 Igriz. Build the decentralized future.
+          © 2026 IGRIZ. Build the decentralized future.
         </div>
       </footer>
     </div>

@@ -8,6 +8,14 @@
 @import './components/toast.scss';
 @import './components/landing.scss';
 
+@font-face {
+  font-family: 'Monorama';
+  src: url('/Monorama.woff2') format('woff2');
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 html,
 body {
   height: 100%;

@@ -19,6 +19,13 @@ export const links: LinksFunction = () => [
     href: '/favicon.svg',
     type: 'image/svg+xml',
   },
+  {
+    rel: 'preload',
+    href: '/Monorama.woff2',
+    as: 'font',
+    type: 'font/woff2',
+    crossOrigin: 'anonymous',
+  },
   { rel: 'stylesheet', href: reactToastifyStyles },
   { rel: 'stylesheet', href: tailwindReset },
   { rel: 'stylesheet', href: globalStyles },
