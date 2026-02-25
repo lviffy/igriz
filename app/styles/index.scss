@@ -6,11 +6,14 @@
 @import './components/code.scss';
 @import './components/editor.scss';
 @import './components/toast.scss';
+@import './components/landing.scss';
 
 html,
 body {
   height: 100%;
   width: 100%;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #1E1E21;
 }
 
 /* Minimal scrollbar styling */
