@@ -12,6 +12,7 @@ import { fileModificationsToHTML } from '~/utils/diff';
 import { cubicEasingFn } from '~/utils/easings';
 import { createScopedLogger, renderLogger } from '~/utils/logger';
 import { BaseChat } from './BaseChat';
+import type { FailedActionState } from '~/lib/runtime/action-runner';
 
 const toastAnimation = cssTransition({
   enter: 'animated fadeInRight',
@@ -76,6 +77,11 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, initialPro
 
   const [animationScope, animate] = useAnimate();
 
+  // track auto-fix attempts to prevent infinite loops
+  const autoFixAttemptRef = useRef(0);
+  const MAX_AUTO_FIX_ATTEMPTS = 3;
+  const isAutoFixingRef = useRef(false);
+
   const { messages, isLoading, input, handleInputChange, setInput, stop, append } = useChat({
     api: '/api/chat',
     onError: (error) => {
@@ -84,9 +90,101 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, initialPro
     },
     onFinish: () => {
       logger.debug('Finished streaming');
+
+      // after AI finishes streaming, wait for all actions to complete and check for errors
+      checkForErrorsAndAutoFix();
     },
     initialMessages,
   });
+
+  /**
+   * After the AI finishes responding, wait for all actions to complete,
+   * then check for any failed shell actions and auto-send the errors
+   * back to the AI for fixing.
+   */
+  const checkForErrorsAndAutoFix = async () => {
+    // don't auto-fix if we've exceeded max attempts or already fixing
+    if (autoFixAttemptRef.current >= MAX_AUTO_FIX_ATTEMPTS || isAutoFixingRef.current) {
+      if (autoFixAttemptRef.current >= MAX_AUTO_FIX_ATTEMPTS) {
+        logger.debug('Max auto-fix attempts reached, stopping auto-fix');
+      }
+
+      return;
+    }
+
+    // wait a bit for actions to start, then find the latest artifact's runner
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+
+    const artifact = workbenchStore.latestArtifact;
+
+    if (!artifact) {
+      return;
+    }
+
+    try {
+      // wait for all queued actions in the runner to finish
+      await artifact.runner.onAllActionsComplete;
+    } catch {
+      // actions may throw on failure, that's expected
+    }
+
+    // small delay to ensure action states are updated
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    // collect failed actions with their output
+    const failedActions = artifact.runner.getFailedActions();
+
+    if (failedActions.length === 0) {
+      // no errors — reset the auto-fix counter
+      autoFixAttemptRef.current = 0;
+
+      return;
+    }
+
+    // filter out npm install failures that are just warnings, and "npm run dev" which runs indefinitely
+    const meaningfulFailures = failedActions.filter((action: FailedActionState) => {
+      const content = action.type === 'shell' ? action.content : '';
+
+      // skip npm run dev since it stays running
+      if (content.includes('npm run dev') || content.includes('npm start')) {
+        return false;
+      }
+
+      return true;
+    });
+
+    if (meaningfulFailures.length === 0) {
+      autoFixAttemptRef.current = 0;
+
+      return;
+    }
+
+    // build the error message
+    const errorDetails = meaningfulFailures
+      .map((action: FailedActionState, index: number) => {
+        const command = action.type === 'shell' ? action.content : 'file action';
+        const output = action.output || 'No output captured';
+
+        return `**Error ${index + 1}:** Command: \`${command}\`\n\`\`\`\n${output.slice(-2000)}\n\`\`\``;
+      })
+      .join('\n\n');
+
+    const autoFixMessage = `The following errors occurred while running the project. Please analyze and fix them:\n\n${errorDetails}\n\nPlease provide the complete fixed files and commands.`;
+
+    logger.debug(`Auto-fixing errors (attempt ${autoFixAttemptRef.current + 1}/${MAX_AUTO_FIX_ATTEMPTS})`);
+
+    isAutoFixingRef.current = true;
+    autoFixAttemptRef.current++;
+
+    toast.info(
+      `Auto-fixing ${meaningfulFailures.length} error(s)... (attempt ${autoFixAttemptRef.current}/${MAX_AUTO_FIX_ATTEMPTS})`,
+    );
+
+    // send the error message as a user message for the AI to fix
+    append({ role: 'user', content: autoFixMessage });
+
+    isAutoFixingRef.current = false;
+  };
 
   const { enhancingPrompt, promptEnhanced, enhancePrompt, resetEnhancer } = usePromptEnhancer();
   const { parsedMessages, parseMessages } = useMessageParser();

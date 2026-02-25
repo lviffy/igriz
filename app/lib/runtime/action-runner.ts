@@ -15,21 +15,23 @@ export type BaseActionState = BoltAction & {
   abort: () => void;
   executed: boolean;
   abortSignal: AbortSignal;
+  output?: string;
 };
 
 export type FailedActionState = BoltAction &
   Omit<BaseActionState, 'status'> & {
     status: Extract<ActionStatus, 'failed'>;
     error: string;
+    output?: string;
   };
 
 export type ActionState = BaseActionState | FailedActionState;
 
-type BaseActionUpdate = Partial<Pick<BaseActionState, 'status' | 'abort' | 'executed'>>;
+type BaseActionUpdate = Partial<Pick<BaseActionState, 'status' | 'abort' | 'executed' | 'output'>>;
 
 export type ActionStateUpdate =
   | BaseActionUpdate
-  | (Omit<BaseActionUpdate, 'status'> & { status: 'failed'; error: string });
+  | (Omit<BaseActionUpdate, 'status'> & { status: 'failed'; error: string; output?: string });
 
 type ActionsMap = MapStore<Record<string, ActionState>>;
 
@@ -38,6 +40,22 @@ export class ActionRunner {
   #currentExecutionPromise: Promise<void> = Promise.resolve();
 
   actions: ActionsMap = map({});
+
+  /**
+   * Resolves when all currently queued actions have finished executing.
+   * Callers can await this to know when all actions are done.
+   */
+  get onAllActionsComplete(): Promise<void> {
+    return this.#currentExecutionPromise;
+  }
+
+  /**
+   * Returns all actions that failed, including their captured output.
+   */
+  getFailedActions(): FailedActionState[] {
+    const allActions = this.actions.get();
+    return Object.values(allActions).filter((action): action is FailedActionState => action.status === 'failed');
+  }
 
   constructor(webcontainerPromise: Promise<WebContainer>) {
     this.#webcontainer = webcontainerPromise;
@@ -103,7 +121,7 @@ export class ActionRunner {
     try {
       switch (action.type) {
         case 'shell': {
-          await this.#runShellAction(action);
+          await this.#runShellAction(action, actionId);
           break;
         }
         case 'file': {
@@ -121,7 +139,7 @@ export class ActionRunner {
     }
   }
 
-  async #runShellAction(action: ActionState) {
+  async #runShellAction(action: ActionState, actionId: string) {
     if (action.type !== 'shell') {
       unreachable('Expected shell action');
     }
@@ -136,10 +154,20 @@ export class ActionRunner {
       process.kill();
     });
 
+    // capture shell output for error reporting
+    let outputText = '';
+
     process.output.pipeTo(
       new WritableStream({
         write(data) {
           console.log(data);
+
+          // keep last 4000 chars to avoid memory bloat
+          outputText += data;
+
+          if (outputText.length > 4000) {
+            outputText = outputText.slice(-4000);
+          }
         },
       }),
     );
@@ -147,6 +175,20 @@ export class ActionRunner {
     const exitCode = await process.exit;
 
     logger.debug(`Process terminated with code ${exitCode}`);
+
+    // store output on the action state
+    this.#updateAction(actionId, { output: outputText });
+
+    if (exitCode !== 0) {
+      // mark as failed with the captured output
+      this.#updateAction(actionId, {
+        status: 'failed',
+        error: `Process exited with code ${exitCode}`,
+        output: outputText,
+      });
+
+      throw new Error(`Shell command failed with exit code ${exitCode}`);
+    }
   }
 
   async #runFileAction(action: ActionState) {

@@ -66,6 +66,10 @@ export class WorkbenchStore {
     return this.#getArtifact(this.artifactIdList[0]);
   }
 
+  get latestArtifact(): ArtifactState | undefined {
+    return this.#getArtifact(this.artifactIdList[this.artifactIdList.length - 1]);
+  }
+
   get filesCount(): number {
     return this.#filesStore.filesCount;
   }
