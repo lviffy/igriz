@@ -380,14 +380,22 @@ export const getBlockchainSystemPrompt = (
         const fs = require('fs');
         const path = require('path');
 
-        // Skip compilation if artifacts already exist (avoids redundant work on project reopen)
-        const artifactsDir = path.join(__dirname, '..', 'artifacts');
-        if (fs.existsSync(artifactsDir)) {
-          const existingArtifacts = fs.readdirSync(artifactsDir).filter(f => f.endsWith('.json'));
-          if (existingArtifacts.length > 0) {
-            console.log('Compiled artifacts already exist:', existingArtifacts.join(', '));
-            console.log('Skipping compilation. Delete the artifacts/ folder to force recompile.');
-            process.exit(0);
+        // Skip compilation if valid artifacts already exist (avoids redundant work on project reopen)
+        {
+          const existingArtifactsDir = path.join(__dirname, '..', 'artifacts');
+          if (fs.existsSync(existingArtifactsDir)) {
+            const existingArtifacts = fs.readdirSync(existingArtifactsDir).filter(f => f.endsWith('.json'));
+            const hasValidArtifact = existingArtifacts.some(f => {
+              try {
+                const data = JSON.parse(fs.readFileSync(path.join(existingArtifactsDir, f), 'utf8'));
+                return data.bytecode && data.bytecode.length > 2;
+              } catch { return false; }
+            });
+            if (hasValidArtifact) {
+              console.log('Compiled artifacts already exist:', existingArtifacts.join(', '));
+              console.log('Skipping compilation. Delete the artifacts/ folder to force recompile.');
+              process.exit(0);
+            }
           }
         }
 
