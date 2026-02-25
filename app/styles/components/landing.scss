@@ -25,6 +25,95 @@
   to { width: 100%; }
 }
 
+@keyframes float1 {
+  0%, 100% { transform: translateY(0) rotateX(25deg) rotateY(0deg); }
+  50% { transform: translateY(-20px) rotateX(25deg) rotateY(180deg); }
+}
+
+@keyframes float2 {
+  0%, 100% { transform: translateY(0) rotateZ(0deg); }
+  50% { transform: translateY(-30px) rotateZ(90deg); }
+}
+
+@keyframes float3 {
+  0%, 100% { transform: translateY(0) rotate(45deg) scale(1); }
+  50% { transform: translateY(-15px) rotate(45deg) scale(1.1); }
+}
+
+@keyframes float4 {
+  0%, 100% { transform: translateY(0) rotateX(70deg); }
+  50% { transform: translateY(-25px) rotateX(70deg) rotateZ(180deg); }
+}
+
+@keyframes float5 {
+  0%, 100% { transform: translateY(0) rotateX(20deg) rotateY(0deg); }
+  50% { transform: translateY(-18px) rotateX(20deg) rotateY(120deg); }
+}
+
+/* 3D floating shapes */
+.landing-3d-shapes {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+  perspective: 800px;
+}
+
+.shape {
+  position: absolute;
+  opacity: 0.06;
+}
+
+.shape-cube {
+  top: 15%;
+  left: 8%;
+  width: 60px;
+  height: 60px;
+  border: 2px solid rgba(239, 68, 68, 0.8);
+  border-radius: 8px;
+  animation: float1 8s ease-in-out infinite;
+}
+
+.shape-hexagon {
+  top: 20%;
+  right: 10%;
+  width: 50px;
+  height: 50px;
+  background: rgba(239, 68, 68, 0.4);
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  animation: float2 10s ease-in-out infinite;
+}
+
+.shape-diamond {
+  bottom: 35%;
+  left: 12%;
+  width: 40px;
+  height: 40px;
+  border: 2px solid rgba(239, 68, 68, 0.6);
+  animation: float3 7s ease-in-out infinite;
+}
+
+.shape-ring {
+  top: 30%;
+  right: 15%;
+  width: 70px;
+  height: 70px;
+  border: 2px solid rgba(239, 68, 68, 0.5);
+  border-radius: 50%;
+  animation: float4 9s ease-in-out infinite;
+}
+
+.shape-pyramid {
+  bottom: 30%;
+  right: 8%;
+  width: 45px;
+  height: 45px;
+  background: rgba(239, 68, 68, 0.3);
+  clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
+  animation: float5 11s ease-in-out infinite;
+}
+
 /* Navigation */
 .landing-nav {
   display: flex;

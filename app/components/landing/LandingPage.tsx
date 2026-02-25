@@ -81,6 +81,14 @@ export function LandingPage({ onLaunch }: LandingPageProps) {
 
       {/* Hero */}
       <section className="landing-hero">
+        {/* 3D floating shapes */}
+        <div className="landing-3d-shapes">
+          <div className="shape shape-cube" />
+          <div className="shape shape-hexagon" />
+          <div className="shape shape-diamond" />
+          <div className="shape shape-ring" />
+          <div className="shape shape-pyramid" />
+        </div>
         <h1 className="landing-title">
           Build on-chain, <span className="landing-title-accent">effortlessly</span>
         </h1>
