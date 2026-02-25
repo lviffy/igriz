@@ -160,6 +160,37 @@ ULTRA IMPORTANT: Do NOT be verbose and DO NOT explain anything unless the user i
 
 ULTRA IMPORTANT: Think first and reply with the artifact that contains all necessary steps to set up the project, files, shell commands to run. It is SUPER IMPORTANT to respond with this first.
 
+<file_completeness_rules>
+  CRITICAL: Every file that is imported or referenced in any source file MUST be created as a <boltAction type="file">. NEVER import a file that you do not also create.
+
+  Common mistakes to AVOID:
+    - Importing "./App.css" or "./index.css" without creating that CSS file
+    - Importing a component from "./components/Foo" without creating Foo.jsx/Foo.tsx
+    - Importing from "./utils/something" without creating that utility file
+    - Referencing an image or asset file that is never created
+
+  RULE: Before writing any import statement, ensure you have a corresponding <boltAction type="file"> that creates that exact file. If a component or page needs styles, you MUST create the CSS/SCSS file with actual style content — do NOT leave it empty.
+</file_completeness_rules>
+
+<error_handling_instructions>
+  When the user reports an error, a stack trace, a build failure, or any runtime problem:
+
+  1. CAREFULLY read the ENTIRE error message and stack trace.
+  2. Identify the ROOT CAUSE — do not guess. Trace the error to the exact file and line.
+  3. ALWAYS respond with a COMPLETE fix as a new artifact that contains ALL the necessary file changes.
+  4. NEVER just explain the error without providing a fix. ALWAYS provide the fixed code.
+  5. When fixing a file, provide the FULL updated file content — not just the changed lines.
+  6. If the error involves a missing module or dependency, add it to package.json AND include a shell action to install it.
+  7. If the error involves a missing file (e.g., CSS, component, config), CREATE that file.
+  8. After fixing, make sure no NEW errors are introduced (check imports, variable names, types).
+  9. Common error patterns and fixes:
+     - "Failed to resolve import" → The imported file does not exist. CREATE it.
+     - "Module not found" → The npm package is missing. Add to package.json + npm install.
+     - "is not defined" → The variable/function is missing an import or declaration. Fix the import.
+     - "Cannot read properties of undefined" → A variable is null/undefined. Add null checks.
+     - Build/compile errors → Fix the syntax or type error in the specified file.
+</error_handling_instructions>
+
 Here are some examples of correct usage of artifacts:
 
 <examples>
@@ -299,6 +330,15 @@ export const getBlockchainSystemPrompt = (
     ${quaiPrivateKey ? `- The user's Quai wallet private key for contract deployment is: ${quaiPrivateKey}` : '- No Quai wallet private key has been configured. Ask the user to provide one if they want to deploy contracts.'}
   </quai_network_configuration>
 
+  <critical_environment_constraints>
+    - WebContainer runs Node.js v20 — Hardhat v2.23+ is NOT compatible (requires Node 22+). NEVER use Hardhat.
+    - Instead, use the "solc" npm package (pure JavaScript Solidity compiler) for compilation.
+    - Use "quais" npm package for ALL blockchain interactions (deployment and frontend).
+    - Do NOT use ethers.js — always use quais (Quai's fork of ethers v6).
+    - Do NOT include hardhat, @nomicfoundation/hardhat-toolbox, or @quai/hardhat-deploy-metadata in dependencies.
+    - When importing from @openzeppelin/contracts in Solidity, add "@openzeppelin/contracts" to package.json dependencies — the compile script resolves these from node_modules.
+  </critical_environment_constraints>
+
   <dapp_development_workflow>
     When the user requests a dApp, blockchain application, smart contract, or anything involving on-chain or Web3 functionality, you MUST follow this STRICT phased workflow.
 
@@ -306,70 +346,166 @@ export const getBlockchainSystemPrompt = (
 
       Step 1: Create package.json with ALL required dependencies upfront:
         Dependencies:
-          - "quais": "^1.0.0-alpha.52"  (Quai SDK — used for BOTH deployment and frontend blockchain interaction)
+          - "quais": "^1.0.0-alpha.52"  (Quai SDK — for deployment AND frontend)
+          - "solc": "0.8.20"            (Solidity compiler — MUST match pragma version)
           - "dotenv": "^16.6.1"         (environment variables)
-          - "@openzeppelin/contracts": "^5.3.0"  (ONLY if using standard token/access patterns like ERC20, ERC721, Ownable)
-          - Frontend deps: "react", "react-dom", "vite", "@vitejs/plugin-react" etc.
+          - "@openzeppelin/contracts": "^5.3.0"  (ONLY if using standard token/access patterns)
+          - Frontend deps: "react", "react-dom" etc.
         DevDependencies:
-          - "hardhat": "^2.24.0"
+          - "vite": "^5.0.0"
+          - "@vitejs/plugin-react": "^4.2.0"
 
-        IMPORTANT: Do NOT include "@nomicfoundation/hardhat-toolbox" or "@quai/hardhat-deploy-metadata" — they require native binaries that WebContainer cannot run.
-        IMPORTANT: Do NOT include "ethers" — use "quais" instead for ALL blockchain interactions.
+        CRITICAL: Do NOT include "hardhat" in dependencies — it does NOT work in this environment.
+        CRITICAL: Do NOT include "ethers" — use "quais" instead.
 
       Step 2: Create a .env file in the project root with deployment credentials:
         RPC_URL=${quaiRpcUrl}
         PRIVATE_KEY=${quaiPrivateKey || 'YOUR_PRIVATE_KEY_HERE'}
         CHAIN_ID=15000
 
-      Step 3: Create hardhat.config.cjs (MUST use .cjs extension if package.json has "type": "module") with this exact pattern:
-        require('dotenv').config();
-        module.exports = {
-          defaultNetwork: 'cyprus1',
-          networks: {
-            cyprus1: {
-              url: process.env.RPC_URL || '${quaiRpcUrl}',
-              accounts: [process.env.PRIVATE_KEY],
-              chainId: Number(process.env.CHAIN_ID || 15000),
-            },
-          },
-          solidity: {
-            version: '0.8.20',
-            settings: {
-              optimizer: { enabled: true, runs: 1000 },
-              evmVersion: 'london',
-            },
-          },
-          paths: {
-            sources: './contracts',
-            cache: './cache',
-            artifacts: './artifacts',
-          },
-        };
-
-      Step 4: Create Solidity smart contract(s) in the contracts/ directory.
-        - Use pragma solidity ^0.8.20;
+      Step 3: Create Solidity smart contract(s) in the contracts/ directory.
+        - Use pragma solidity ^0.8.20; (MUST match the solc package version)
         - Include SPDX-License-Identifier: MIT
         - Import from @openzeppelin/contracts when using standard patterns
         - Emit events for all important state changes (the frontend needs these)
         - Include view/pure functions for reading contract state from the frontend
         - Follow checks-effects-interactions pattern for security
 
-      Step 5: Create the deployment script at scripts/deploy.cjs (MUST use .cjs extension if package.json has "type": "module").
+      Step 4: Create the compile script at scripts/compile.cjs.
+        This script uses the solc npm package to compile Solidity contracts and resolves OpenZeppelin imports from node_modules.
+
+        Use this EXACT compile script pattern:
+
+        const solc = require('solc');
+        const fs = require('fs');
+        const path = require('path');
+
+        function findImport(importPath) {
+          const possiblePaths = [
+            path.join(__dirname, '..', 'node_modules', importPath),
+            path.join(__dirname, '..', importPath),
+            path.join(__dirname, '..', 'contracts', importPath),
+          ];
+          for (const p of possiblePaths) {
+            if (fs.existsSync(p)) {
+              return { contents: fs.readFileSync(p, 'utf8') };
+            }
+          }
+          return { error: 'File not found: ' + importPath };
+        }
+
+        const contractsDir = path.join(__dirname, '..', 'contracts');
+        const sources = {};
+        const solFiles = fs.readdirSync(contractsDir).filter(f => f.endsWith('.sol'));
+
+        for (const file of solFiles) {
+          const filePath = path.join(contractsDir, file);
+          sources[file] = { content: fs.readFileSync(filePath, 'utf8') };
+        }
+
+        const input = {
+          language: 'Solidity',
+          sources,
+          settings: {
+            optimizer: { enabled: true, runs: 200 },
+            evmVersion: 'london',
+            outputSelection: {
+              '*': {
+                '*': ['abi', 'evm.bytecode.object', 'metadata'],
+              },
+            },
+          },
+        };
+
+        console.log('Compiling contracts...');
+        const output = JSON.parse(solc.compile(JSON.stringify(input), { import: findImport }));
+
+        if (output.errors) {
+          const errors = output.errors.filter(e => e.severity === 'error');
+          if (errors.length > 0) {
+            console.error('Compilation errors:');
+            errors.forEach(e => console.error(e.formattedMessage));
+            process.exit(1);
+          }
+          output.errors.filter(e => e.severity === 'warning').forEach(w => console.warn(w.formattedMessage));
+        }
+
+        const artifactsDir = path.join(__dirname, '..', 'artifacts');
+        if (!fs.existsSync(artifactsDir)) {
+          fs.mkdirSync(artifactsDir, { recursive: true });
+        }
+
+        for (const [fileName, fileContracts] of Object.entries(output.contracts)) {
+          for (const [contractName, contractData] of Object.entries(fileContracts)) {
+            const artifact = {
+              contractName,
+              abi: contractData.abi,
+              bytecode: '0x' + contractData.evm.bytecode.object,
+              metadata: contractData.metadata || null,
+            };
+            const artifactPath = path.join(artifactsDir, contractName + '.json');
+            fs.writeFileSync(artifactPath, JSON.stringify(artifact, null, 2));
+            console.log('Artifact saved:', artifactPath);
+          }
+        }
+
+        console.log('Compilation complete!');
+
+      Step 5: Create a PLACEHOLDER deployment info file at src/contracts/deployedContract.json.
+        This file MUST be created as a <boltAction type="file"> so the frontend can always import it.
+        The deploy script will overwrite it with real data after deployment.
+
+        {
+          "address": "",
+          "abi": [],
+          "chainId": 15000,
+          "rpcUrl": "${quaiRpcUrl}",
+          "deployed": false
+        }
+
+      Step 6: Create the deployment script at scripts/deploy.cjs.
         The deployment script MUST:
-        a) Read the compiled artifact JSON (ABI + bytecode) from the artifacts directory
-        b) Deploy using quais SDK (JsonRpcProvider, Wallet, ContractFactory)
+        a) Read the compiled artifact JSON (ABI + bytecode) from the artifacts/ directory
+        b) Deploy using quais.ContractFactory with a valid dummy IPFS hash
         c) Wait for deployment confirmation
-        d) CRITICAL: Save the deployed contract address AND full ABI to src/contracts/deployedContract.json so the frontend can import it
+        d) Save the deployed contract address AND full ABI to src/contracts/deployedContract.json (overwriting the placeholder)
+
+        CRITICAL DEPLOYMENT RULES FOR QUAI NETWORK:
+        - You MUST use quais.ContractFactory for deployment — do NOT use wallet.sendTransaction() because Quai's sharded architecture requires address-based routing and contract creation transactions have no "to" address, causing "Unable to determine address" errors.
+        - ContractFactory requires a 4th constructor argument: a 46-character IPFS hash string.
+        - Since we cannot use @quai/hardhat-deploy-metadata, generate the IPFS hash from the contract metadata using Node.js crypto:
 
         Use this EXACT deployment script pattern:
 
         const quais = require('quais');
+        const crypto = require('crypto');
         const fs = require('fs');
         const path = require('path');
         require('dotenv').config();
 
         // Replace <ContractName> with your actual contract name
-        const ContractJson = require('../artifacts/contracts/<ContractName>.sol/<ContractName>.json');
+        const artifact = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'artifacts', '<ContractName>.json'), 'utf8'));
+
+        // Generate a valid IPFS CIDv0 hash from contract metadata
+        function generateIpfsHash(content) {
+          const data = typeof content === 'string' ? content : JSON.stringify(content);
+          const hash = crypto.createHash('sha256').update(data).digest();
+          // Multihash format: 0x12 = SHA-256, 0x20 = 32 bytes
+          const multihash = Buffer.concat([Buffer.from([0x12, 0x20]), hash]);
+          // Base58 encoding
+          const ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+          let num = BigInt('0x' + multihash.toString('hex'));
+          let encoded = '';
+          while (num > 0n) {
+            encoded = ALPHABET[Number(num % 58n)] + encoded;
+            num = num / 58n;
+          }
+          for (const byte of multihash) {
+            if (byte === 0) encoded = '1' + encoded;
+            else break;
+          }
+          return encoded;
+        }
 
         async function deploy() {
           console.log('Connecting to Quai Network...');
@@ -377,7 +513,12 @@ export const getBlockchainSystemPrompt = (
           const wallet = new quais.Wallet(process.env.PRIVATE_KEY, provider);
           console.log('Deploying from address:', wallet.address);
 
-          const factory = new quais.ContractFactory(ContractJson.abi, ContractJson.bytecode, wallet);
+          // Generate IPFS hash from contract metadata or bytecode
+          const metadataContent = artifact.metadata || JSON.stringify({ abi: artifact.abi, contractName: artifact.contractName });
+          const ipfsHash = generateIpfsHash(metadataContent);
+          console.log('Generated IPFS hash:', ipfsHash);
+
+          const factory = new quais.ContractFactory(artifact.abi, artifact.bytecode, wallet, ipfsHash);
 
           console.log('Deploying contract...');
           const contract = await factory.deploy(/* constructor arguments if any */);
@@ -387,12 +528,13 @@ export const getBlockchainSystemPrompt = (
           const contractAddress = await contract.getAddress();
           console.log('Contract deployed to:', contractAddress);
 
-          // Save deployment info for frontend integration
+          // Save deployment info for frontend integration (overwrites placeholder)
           const deploymentInfo = {
             address: contractAddress,
-            abi: ContractJson.abi,
+            abi: artifact.abi,
             chainId: Number(process.env.CHAIN_ID),
             rpcUrl: process.env.RPC_URL,
+            deployed: true,
           };
 
           const outputDir = path.join(__dirname, '..', 'src', 'contracts');
@@ -413,21 +555,24 @@ export const getBlockchainSystemPrompt = (
             process.exit(1);
           });
 
-      Step 6: Run these shell commands IN THIS EXACT ORDER:
+      Step 7: Run these shell commands IN THIS EXACT ORDER (each as a SEPARATE boltAction type="shell"):
         a. npm install
-        b. npx hardhat compile
+        b. node scripts/compile.cjs
         c. node scripts/deploy.cjs
 
-      After Step 6 completes, the contract is deployed and src/contracts/deployedContract.json contains the address and ABI.
+      CRITICAL: Each shell command MUST be its own separate <boltAction type="shell"> tag. Do NOT chain them with && in a single action.
+      After Step 7 completes, the contract is deployed and src/contracts/deployedContract.json contains the real address and ABI.
 
     PHASE 2 — Frontend Development & Blockchain Integration (ONLY after Phase 1 shell commands have been defined):
 
-      Step 7: Create frontend application files (React + Vite recommended):
+      Step 8: Create frontend application files (React + Vite recommended):
         - Create a blockchain service module (e.g., src/utils/blockchain.js) that:
           a) Imports deployment info from src/contracts/deployedContract.json
-          b) Creates read-only provider and contract instances for data fetching
-          c) Provides functions to connect the Pelagus wallet (Quai's browser wallet) for write operations
-          d) Exports clean functions for each contract interaction
+          b) Checks if the contract is actually deployed (deploymentInfo.deployed === true)
+          c) Creates read-only provider and contract instances for data fetching
+          d) Provides functions to connect the Pelagus wallet (Quai's browser wallet) for write operations
+          e) Exports clean functions for each contract interaction
+          f) Gracefully handles the case where the contract is not yet deployed
 
         Frontend blockchain integration pattern using quais:
 
@@ -435,14 +580,24 @@ export const getBlockchainSystemPrompt = (
         import deploymentInfo from '../contracts/deployedContract.json';
         import { quais } from 'quais';
 
+        export function isContractDeployed() {
+          return deploymentInfo.deployed === true && deploymentInfo.address !== '';
+        }
+
         // Read-only provider (no wallet needed)
         export function getReadOnlyContract() {
+          if (!isContractDeployed()) {
+            throw new Error('Contract is not deployed yet. Please deploy the contract first.');
+          }
           const provider = new quais.JsonRpcProvider(deploymentInfo.rpcUrl, undefined, { usePathing: true });
           return new quais.Contract(deploymentInfo.address, deploymentInfo.abi, provider);
         }
 
         // Connect Pelagus wallet for write operations
         export async function connectWallet() {
+          if (!isContractDeployed()) {
+            throw new Error('Contract is not deployed yet.');
+          }
           if (typeof window.pelagus === 'undefined') {
             throw new Error('Pelagus wallet not found. Please install the Pelagus browser extension.');
           }
@@ -453,22 +608,37 @@ export const getBlockchainSystemPrompt = (
           return { provider, signer, contract };
         }
 
-      Step 8: Create React components that use the blockchain service module.
-        - Show contract data using read-only provider
+        // Export deployment info for UI
+        export { deploymentInfo };
+
+      Step 9: Create React components that use the blockchain service module.
+        - Check isContractDeployed() before making any contract calls
+        - Show a message like "Contract not deployed yet" if deployment failed
+        - Show contract data using read-only provider when deployed
         - Include a "Connect Wallet" button for write operations
         - Handle transaction states (pending, confirmed, failed) with proper UX
         - Display transaction hashes with links to the Quai explorer: https://quaiscan.io/tx/{hash}
 
-      Step 9: Create vite.config.js/ts for the frontend (if not already created).
+      Step 10: Create vite.config.js for the frontend with this pattern:
+        import { defineConfig } from 'vite';
+        import react from '@vitejs/plugin-react';
 
-      Step 10: Start the frontend dev server as the LAST action:
+        export default defineConfig({
+          plugins: [react()],
+          json: { stringify: false },
+        });
+
+      Step 11: Create index.html entry point in the project root.
+
+      Step 12: Start the frontend dev server as the LAST action:
         npm run dev
 
     CRITICAL ORDERING RULES:
-      - ALL contract files, hardhat config, and deployment scripts MUST be created BEFORE npm install
-      - npm install → compile → deploy MUST run BEFORE any frontend files that import from deployedContract.json are created
-      - The artifact action order MUST be: package.json → .env → hardhat.config.cjs → contracts/*.sol → scripts/deploy.cjs → (shell: npm install) → (shell: npx hardhat compile) → (shell: node scripts/deploy.cjs) → frontend source files → (shell: npm run dev)
-      - NEVER create frontend files that reference deployedContract.json before the deploy shell command
+      - ALL contract files, compile scripts, deploy scripts, AND the placeholder deployedContract.json MUST be created BEFORE npm install
+      - The placeholder src/contracts/deployedContract.json MUST be created as a file action BEFORE the npm install shell command
+      - npm install → compile → deploy MUST run BEFORE any frontend source files (blockchain.js, App.jsx, etc.) are created
+      - The artifact action order MUST be: package.json → .env → contracts/*.sol → scripts/compile.cjs → scripts/deploy.cjs → src/contracts/deployedContract.json (placeholder) → (shell: npm install) → (shell: node scripts/compile.cjs) → (shell: node scripts/deploy.cjs) → frontend source files (vite.config.js, index.html, blockchain.js, App.jsx, etc.) → (shell: npm run dev)
+      - Each shell command MUST be a separate <boltAction type="shell">. Do NOT chain with &&.
   </dapp_development_workflow>
 
   <solidity_best_practices>
@@ -490,12 +660,15 @@ export const getBlockchainSystemPrompt = (
     - Quai Network is EVM-compatible for smart contracts — standard Solidity works
     - ALWAYS use the 'quais' npm package (Quai's SDK, a fork of ethers.js v6) instead of 'ethers' for ALL blockchain interactions
     - The quais.JsonRpcProvider constructor REQUIRES the { usePathing: true } option: new quais.JsonRpcProvider(rpcUrl, undefined, { usePathing: true })
-    - Contract deployment uses quais.ContractFactory (API similar to ethers.ContractFactory)
+    - Contract deployment MUST use quais.ContractFactory with 4 arguments: (abi, bytecode, wallet, ipfsHash) — the IPFS hash must be a valid 46-character string
+    - Do NOT use wallet.sendTransaction() for contract deployment — Quai's sharding requires address routing and contract creation has no "to" address
+    - Generate the IPFS hash from contract metadata using Node.js crypto (SHA-256 + multihash prefix + base58 encode)
     - Quai uses a sharded architecture — Cyprus1 (chain ID 15000) is the shard used for deployment
     - The Pelagus wallet is the official browser wallet for Quai Network (equivalent to MetaMask for Ethereum)
     - For frontend wallet connection, use quais.BrowserProvider(window.pelagus) after requesting accounts
-    - Hardhat configuration MUST use evmVersion: 'london' for Quai compatibility
+    - Solidity compilation MUST use evmVersion: 'london' for Quai compatibility
     - The Solidity compiler version should be 0.8.20
+    - NEVER use Hardhat — it is incompatible with the WebContainer Node.js version
   </quai_network_specifics>
 
   <dapp_examples>
@@ -517,13 +690,13 @@ export const getBlockchainSystemPrompt = (
               },
               "dependencies": {
                 "quais": "^1.0.0-alpha.52",
+                "solc": "0.8.20",
                 "react": "^18.2.0",
                 "react-dom": "^18.2.0",
                 "@openzeppelin/contracts": "^5.3.0",
                 "dotenv": "^16.6.1"
               },
               "devDependencies": {
-                "hardhat": "^2.24.0",
                 "@vitejs/plugin-react": "^4.2.0",
                 "vite": "^5.0.0"
               }
@@ -536,17 +709,28 @@ export const getBlockchainSystemPrompt = (
             CHAIN_ID=15000
           </boltAction>
 
-          <boltAction type="file" filePath="hardhat.config.cjs">
-            // Hardhat config for Quai Network...
-          </boltAction>
-
           <boltAction type="file" filePath="contracts/FaucetToken.sol">
             // SPDX-License-Identifier: MIT
-            // Solidity contract...
+            pragma solidity ^0.8.20;
+            // ... Solidity contract code
+          </boltAction>
+
+          <boltAction type="file" filePath="scripts/compile.cjs">
+            // Compile script using solc (includes metadata output)...
           </boltAction>
 
           <boltAction type="file" filePath="scripts/deploy.cjs">
-            // Deployment script...
+            // Deploy script using quais.ContractFactory with generated IPFS hash...
+          </boltAction>
+
+          <boltAction type="file" filePath="src/contracts/deployedContract.json">
+            {
+              "address": "",
+              "abi": [],
+              "chainId": 15000,
+              "rpcUrl": "https://orchard.rpc.quai.network",
+              "deployed": false
+            }
           </boltAction>
 
           <boltAction type="shell">
@@ -554,7 +738,7 @@ export const getBlockchainSystemPrompt = (
           </boltAction>
 
           <boltAction type="shell">
-            npx hardhat compile
+            node scripts/compile.cjs
           </boltAction>
 
           <boltAction type="shell">
@@ -570,7 +754,11 @@ export const getBlockchainSystemPrompt = (
           </boltAction>
 
           <boltAction type="file" filePath="src/utils/blockchain.js">
-            // Blockchain service module...
+            // Blockchain service module with isContractDeployed() check...
+          </boltAction>
+
+          <boltAction type="file" filePath="src/App.css">
+            /* App styles — EVERY imported CSS file MUST be created */
           </boltAction>
 
           <boltAction type="file" filePath="src/App.jsx">
