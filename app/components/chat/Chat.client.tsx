@@ -21,14 +21,14 @@ const toastAnimation = cssTransition({
 
 const logger = createScopedLogger('Chat');
 
-export function Chat() {
+export function Chat({ initialPrompt }: { initialPrompt?: string }) {
   renderLogger.trace('Chat');
 
   const { ready, initialMessages, storeMessageHistory } = useChatHistory();
 
   return (
     <>
-      {ready && <ChatImpl initialMessages={initialMessages} storeMessageHistory={storeMessageHistory} />}
+      {ready && <ChatImpl initialMessages={initialMessages} storeMessageHistory={storeMessageHistory} initialPrompt={initialPrompt} />}
       <ToastContainer
         closeButton={({ closeToast }) => {
           return (
@@ -63,14 +63,15 @@ export function Chat() {
 interface ChatProps {
   initialMessages: Message[];
   storeMessageHistory: (messages: Message[]) => Promise<void>;
+  initialPrompt?: string;
 }
 
-export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProps) => {
+export const ChatImpl = memo(({ initialMessages, storeMessageHistory, initialPrompt }: ChatProps) => {
   useShortcuts();
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  const [chatStarted, setChatStarted] = useState(initialMessages.length > 0);
+  const [chatStarted, setChatStarted] = useState(initialMessages.length > 0 || !!initialPrompt);
+  const initialPromptSent = useRef(false);
 
   const { showChat } = useStore(chatStore);
 
@@ -194,6 +195,8 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
     chatStore.setKey('started', initialMessages.length > 0);
   }, []);
 
+
+
   useEffect(() => {
     parseMessages(messages, isLoading);
 
@@ -295,6 +298,16 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
   };
 
   const [messageRef, scrollRef] = useSnapScroll();
+
+  // Auto-send initial prompt from landing page
+  useEffect(() => {
+    if (initialPrompt && !initialPromptSent.current) {
+      initialPromptSent.current = true;
+      chatStore.setKey('started', true);
+      chatStore.setKey('aborted', false);
+      append({ role: 'user', content: initialPrompt });
+    }
+  }, [initialPrompt]);
 
   return (
     <BaseChat
