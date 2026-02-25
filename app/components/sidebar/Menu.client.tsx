@@ -3,7 +3,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
 import { Dialog, DialogButton, DialogDescription, DialogRoot, DialogTitle } from '~/components/ui/Dialog';
 import { IconButton } from '~/components/ui/IconButton';
-import { ThemeSwitch } from '~/components/ui/ThemeSwitch';
 import { db, deleteById, getAll, chatId, type ChatHistoryItem } from '~/lib/persistence';
 import { cubicEasingFn } from '~/utils/easings';
 import { logger } from '~/utils/logger';
@@ -100,24 +99,34 @@ export function Menu() {
   }, []);
 
   return (
-    <motion.div
-      ref={menuRef}
-      initial="closed"
-      animate={open ? 'open' : 'closed'}
-      variants={menuVariants}
-      className="flex flex-col side-menu fixed top-0 w-[350px] h-full bg-bolt-elements-background-depth-2 border-r rounded-r-3xl border-bolt-elements-borderColor z-sidebar shadow-xl shadow-bolt-elements-sidebar-dropdownShadow text-sm"
-    >
-      <div className="flex items-center h-[var(--header-height)]">{/* Placeholder */}</div>
-      <div className="flex-1 flex flex-col h-full w-full overflow-hidden">
-        <div className="p-4">
-          <a
-            href="/"
-            className="flex gap-2 items-center bg-bolt-elements-sidebar-buttonBackgroundDefault text-bolt-elements-sidebar-buttonText hover:bg-bolt-elements-sidebar-buttonBackgroundHover rounded-md p-2 transition-theme"
-          >
-            <span className="inline-block i-bolt:chat scale-110" />
-            Start new chat
-          </a>
-        </div>
+    <>
+      {/* Toggle button - always visible */}
+      <button
+        onClick={() => setOpen(!open)}
+        className="fixed top-4 left-4 z-max w-10 h-10 flex items-center justify-center rounded-lg bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor hover:bg-bolt-elements-background-depth-3 transition-all"
+        aria-label="Toggle sidebar"
+      >
+        <div className="i-ph:sidebar-simple-duotone text-xl text-bolt-elements-textPrimary" />
+      </button>
+
+      <motion.div
+        ref={menuRef}
+        initial="closed"
+        animate={open ? 'open' : 'closed'}
+        variants={menuVariants}
+        className="flex flex-col side-menu fixed top-0 w-[350px] h-full bg-bolt-elements-background-depth-2 border-r rounded-r-3xl border-bolt-elements-borderColor z-sidebar shadow-xl shadow-bolt-elements-sidebar-dropdownShadow text-sm"
+      >
+        <div className="flex items-center h-[var(--header-height)]">{/* Placeholder */}</div>
+        <div className="flex-1 flex flex-col h-full w-full overflow-hidden">
+          <div className="p-4">
+            <a
+              href="/"
+              className="flex gap-2 items-center bg-bolt-elements-sidebar-buttonBackgroundDefault text-bolt-elements-sidebar-buttonText hover:bg-bolt-elements-sidebar-buttonBackgroundHover rounded-md p-2 transition-theme"
+            >
+              <span className="inline-block i-bolt:chat scale-110" />
+              Start new chat
+            </a>
+          </div>
         <div className="text-bolt-elements-textPrimary font-medium pl-6 pr-5 my-2">Your Chats</div>
         <div className="flex-1 overflow-auto pl-4 pr-5 pb-5">
           {list.length === 0 && <div className="pl-2 text-bolt-elements-textTertiary">No previous conversations</div>}
@@ -163,10 +172,8 @@ export function Menu() {
             </Dialog>
           </DialogRoot>
         </div>
-        <div className="flex items-center border-t border-bolt-elements-borderColor p-4">
-          <ThemeSwitch className="ml-auto" />
-        </div>
       </div>
     </motion.div>
+    </>
   );
 }

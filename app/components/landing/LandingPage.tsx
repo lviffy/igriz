@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { ClientOnly } from 'remix-utils/client-only';
+import { Menu } from '~/components/sidebar/Menu.client';
 
 interface LandingPageProps {
   onLaunch: (prompt?: string) => void;
@@ -69,9 +71,12 @@ export function LandingPage({ onLaunch }: LandingPageProps) {
 
   return (
     <div className="landing">
+      {/* Sidebar */}
+      <ClientOnly>{() => <Menu />}</ClientOnly>
+
       {/* Navigation */}
       <nav className="landing-nav">
-        <a href="/" className="landing-nav-logo" style={{ fontFamily: 'Monorama, sans-serif' }}>IGRIZ</a>
+        <a href="/" className="landing-nav-logo ml-14" style={{ fontFamily: 'Monorama, sans-serif' }}>IGRIZ</a>
         <div className="landing-nav-links">
           <a href="#features" className="landing-nav-link">Features</a>
           <a href="#usecases" className="landing-nav-link">Use Cases</a>
@@ -94,7 +99,7 @@ export function LandingPage({ onLaunch }: LandingPageProps) {
         </h1>
         <p className="landing-network-label">on Quai Networks</p>
         <p className="landing-subtitle">
-          Create decentralized applications by chatting with AI. Smart contracts, frontends, and deployment — all in one flow.
+          Create decentralized applications by chatting with AI. Smart contracts, frontends, and deployment - all in one flow.
         </p>
 
         {/* Chat input */}

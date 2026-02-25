@@ -18,7 +18,7 @@ export function Header() {
         },
       )}
     >
-      <div className="flex items-center gap-2 z-logo text-bolt-elements-textPrimary cursor-pointer">
+      <div className="flex items-center gap-2 z-logo text-bolt-elements-textPrimary cursor-pointer ml-14">
         <div className="i-ph:sidebar-simple-duotone text-xl" />
         <a href="/" className="text-2xl text-accent flex items-center">
           {/* <span className="i-bolt:logo-text?mask w-[46px] inline-block" /> */}
