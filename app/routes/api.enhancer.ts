@@ -2,6 +2,9 @@ import { type ActionFunctionArgs } from '@remix-run/cloudflare';
 import { parseDataStreamPart } from 'ai';
 import { streamText } from '~/lib/.server/llm/stream-text';
 import { stripIndents } from '~/utils/stripIndent';
+import { createScopedLogger } from '~/utils/logger';
+
+const logger = createScopedLogger('API:Enhancer');
 
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
@@ -12,6 +15,8 @@ export async function action(args: ActionFunctionArgs) {
 
 async function enhancerAction({ context, request }: ActionFunctionArgs) {
   const { message } = await request.json<{ message: string }>();
+
+  logger.debug('[ENHANCER] Processing prompt enhancement');
 
   try {
     const result = await streamText(
@@ -48,6 +53,8 @@ async function enhancerAction({ context, request }: ActionFunctionArgs) {
 
     const transformedStream = result.toDataStream().pipeThrough(transformStream);
 
+    logger.info('[ENHANCER] Successfully started streaming enhanced prompt');
+
     return new Response(transformedStream, {
       status: 200,
       headers: {
@@ -55,7 +62,7 @@ async function enhancerAction({ context, request }: ActionFunctionArgs) {
       },
     });
   } catch (error) {
-    console.log(error);
+    logger.error('[ENHANCER] Enhancement error:', error);
 
     throw new Response(null, {
       status: 500,

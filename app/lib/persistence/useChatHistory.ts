@@ -18,6 +18,8 @@ const persistenceEnabled = !import.meta.env.VITE_DISABLE_PERSISTENCE;
 
 export const db = persistenceEnabled ? await openDatabase() : undefined;
 
+let persistenceWarningShown = false;
+
 export const chatId = atom<string | undefined>(undefined);
 export const description = atom<string | undefined>(undefined);
 
@@ -33,8 +35,10 @@ export function useChatHistory() {
     if (!db) {
       setReady(true);
 
-      if (persistenceEnabled) {
-        toast.error(`Chat persistence is unavailable`);
+      // Only show persistence warning once to avoid duplicate notifications
+      if (persistenceEnabled && !persistenceWarningShown) {
+        persistenceWarningShown = true;
+        toast.warning(`Chat history sync is unavailable`, { autoClose: 3000 });
       }
 
       return;
