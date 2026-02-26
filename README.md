@@ -1,5 +1,5 @@
-<p align="left">
-  <img src="imgs/logo.png" alt="Igriz Logo" width="240"/>
+<p align="center">
+  <img src="imgs/logo.png" alt="Igriz Logo" width="120"/>
 </p>
 
 # Igriz
@@ -63,6 +63,10 @@ AI generates React + Vite frontends that connect to the deployed contract, integ
 The frontend imports deployment info, supports read-only access, connects wallets for transactions, and initializes the correct provider config.
 
 ## How It Works
+
+<p align="center">
+  <img src="imgs/flow.png" alt="Igriz Flow Chart" width="800"/>
+</p>
 
 ### 1. User Input: Natural Language Prompt
 
