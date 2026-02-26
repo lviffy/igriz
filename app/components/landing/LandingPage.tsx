@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ClientOnly } from 'remix-utils/client-only';
 import { Menu } from '~/components/sidebar/Menu.client';
+import { WalletButton } from '~/components/wallet/WalletButton';
 import {
   PROVIDER_LIST,
   selectedProviderStore,
@@ -105,6 +106,7 @@ export function LandingPage({ onLaunch }: LandingPageProps) {
           <div className="landing-nav-links">
             <a href="#features" className="landing-nav-link">Features</a>
             <a href="#usecases" className="landing-nav-link">Use Cases</a>
+            <ClientOnly>{() => <WalletButton variant="landing" />}</ClientOnly>
             <button className="landing-nav-cta" onClick={() => onLaunch()}>Get Started</button>
           </div>
         </nav>

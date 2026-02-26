@@ -697,3 +697,93 @@
   color: rgba(255, 255, 255, 0.2);
   font-size: 0.75rem;
 }
+
+/* Wallet Button — Landing Page */
+.landing-wallet-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1.25rem;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.landing-wallet-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.landing-wallet-btn.connected {
+  background: rgba(220, 38, 38, 0.1);
+  border-color: rgba(220, 38, 38, 0.3);
+  color: #fff;
+}
+
+.landing-wallet-btn.connected:hover {
+  background: rgba(220, 38, 38, 0.2);
+  border-color: rgba(220, 38, 38, 0.5);
+}
+
+.landing-wallet-btn-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 6px rgba(34, 197, 94, 0.4);
+}
+
+.landing-wallet-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Wallet Button — Header */
+.header-wallet-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.9rem;
+  background: var(--bolt-elements-button-primary-background);
+  color: var(--bolt-elements-button-primary-text);
+  border: 1px solid var(--bolt-elements-borderColor);
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.header-wallet-btn:hover {
+  background: var(--bolt-elements-button-primary-backgroundHover);
+}
+
+.header-wallet-btn.connected {
+  background: rgba(220, 38, 38, 0.08);
+  border-color: rgba(220, 38, 38, 0.25);
+  color: var(--bolt-elements-textPrimary);
+}
+
+.header-wallet-btn.connected:hover {
+  background: rgba(220, 38, 38, 0.15);
+  border-color: rgba(220, 38, 38, 0.4);
+}
+
+.header-wallet-btn-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 5px rgba(34, 197, 94, 0.35);
+}
+
+.header-wallet-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

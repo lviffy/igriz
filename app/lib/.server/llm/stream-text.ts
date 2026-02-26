@@ -1,4 +1,3 @@
-import { env } from 'node:process';
 import { streamText as _streamText, convertToCoreMessages } from 'ai';
 import { getAPIKey, getAPIKeys } from '~/lib/.server/llm/api-key';
 import { getModel, type LLMProvider } from '~/lib/.server/llm/model';
@@ -23,10 +22,6 @@ export type Messages = Message[];
 
 export type StreamingOptions = Omit<Parameters<typeof _streamText>[0], 'model'>;
 
-function getQuaiPrivateKey(cloudflareEnv: Env): string | undefined {
-  return env.PRIVATE_KEY_QUAI || cloudflareEnv.PRIVATE_KEY_QUAI;
-}
-
 /**
  * Stream text using the given (or default) API key for the provider.
  */
@@ -38,8 +33,7 @@ export function streamText(
   model?: string,
   apiKey?: string,
 ) {
-  const quaiPrivateKey = getQuaiPrivateKey(cloudflareEnv);
-  const systemPrompt = getSystemPrompt() + '\n\n' + getBlockchainSystemPrompt(quaiPrivateKey);
+  const systemPrompt = getSystemPrompt() + '\n\n' + getBlockchainSystemPrompt();
   const key = apiKey || getAPIKey(cloudflareEnv, provider);
 
   return _streamText({
