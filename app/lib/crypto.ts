@@ -56,3 +56,15 @@ function decodeBase64(encoded: Uint8Array) {
 function encodeBase64(data: string) {
   return Uint8Array.from(atob(data), (ch) => ch.codePointAt(0)!);
 }
+
+/**
+ * Creates a hex-encoded SHA-256 hash of the given string.
+ * Used by the Vercel deploy API to identify duplicate files.
+ */
+export async function createSHA256Hash(content: string): Promise<string> {
+  const data = encoder.encode(content);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+
+  return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+}

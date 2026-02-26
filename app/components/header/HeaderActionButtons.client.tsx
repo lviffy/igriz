@@ -1,6 +1,7 @@
 import { useStore } from '@nanostores/react';
 import { workbenchStore } from '~/lib/stores/workbench';
 import { classNames } from '~/utils/classNames';
+import { DeployButton } from './DeployButton.client';
 
 interface HeaderActionButtonsProps {}
 
@@ -57,6 +58,11 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
       >
         Preview
       </span>
+
+      {/* Vercel Deploy */}
+      <div className="ml-2 pl-2 border-l border-bolt-elements-borderColor">
+        <DeployButton />
+      </div>
     </div>
   );
 }
