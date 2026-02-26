@@ -1,7 +1,7 @@
 import { env } from 'node:process';
 import { streamText as _streamText, convertToCoreMessages } from 'ai';
 import { getAPIKey } from '~/lib/.server/llm/api-key';
-import { getModel } from '~/lib/.server/llm/model';
+import { getModel, type LLMProvider } from '~/lib/.server/llm/model';
 import { MAX_TOKENS } from './constants';
 import { getSystemPrompt, getBlockchainSystemPrompt } from './prompts';
 
@@ -27,12 +27,18 @@ function getQuaiPrivateKey(cloudflareEnv: Env): string | undefined {
   return env.PRIVATE_KEY_QUAI || cloudflareEnv.PRIVATE_KEY_QUAI;
 }
 
-export function streamText(messages: Messages, cloudflareEnv: Env, options?: StreamingOptions) {
+export function streamText(
+  messages: Messages,
+  cloudflareEnv: Env,
+  options?: StreamingOptions,
+  provider: LLMProvider = 'groq',
+  model?: string,
+) {
   const quaiPrivateKey = getQuaiPrivateKey(cloudflareEnv);
   const systemPrompt = getSystemPrompt() + '\n\n' + getBlockchainSystemPrompt(quaiPrivateKey);
 
   return _streamText({
-    model: getModel(getAPIKey(cloudflareEnv)),
+    model: getModel(getAPIKey(cloudflareEnv, provider), provider, model),
     system: systemPrompt,
     maxTokens: MAX_TOKENS,
     messages: convertToCoreMessages(messages),

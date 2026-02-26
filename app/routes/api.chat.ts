@@ -3,13 +3,21 @@ import { MAX_RESPONSE_SEGMENTS, MAX_TOKENS } from '~/lib/.server/llm/constants';
 import { CONTINUE_PROMPT } from '~/lib/.server/llm/prompts';
 import { streamText, type Messages, type StreamingOptions } from '~/lib/.server/llm/stream-text';
 import SwitchableStream from '~/lib/.server/llm/switchable-stream';
+import type { LLMProvider } from '~/lib/.server/llm/model';
 
 export async function action(args: ActionFunctionArgs) {
   return chatAction(args);
 }
 
 async function chatAction({ context, request }: ActionFunctionArgs) {
-  const { messages } = await request.json<{ messages: Messages }>();
+  const { messages, provider, model } = await request.json<{
+    messages: Messages;
+    provider?: LLMProvider;
+    model?: string;
+  }>();
+
+  const selectedProvider = provider || 'groq';
+  const selectedModel = model;
 
   const stream = new SwitchableStream();
 
@@ -33,11 +41,11 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
         }
 
         if (msg.includes('401') || msg.toLowerCase().includes('unauthorized')) {
-          return 'Invalid API Key — check your GROQ_API_KEY in .env.local';
+          return `Invalid API Key — check your ${selectedProvider.toUpperCase()} API key in .env.local`;
         }
 
         if (msg.includes('402') || msg.toLowerCase().includes('insufficient') || msg.toLowerCase().includes('credit')) {
-          return 'Insufficient credits — check your Groq usage at console.groq.com';
+          return `Insufficient credits — check your ${selectedProvider} account usage`;
         }
 
         if (msg.includes('429') || msg.toLowerCase().includes('rate limit')) {
@@ -74,13 +82,13 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
         messages.push({ role: 'assistant', content });
         messages.push({ role: 'user', content: CONTINUE_PROMPT });
 
-        const result = await streamText(messages, context.cloudflare.env, options);
+        const result = await streamText(messages, context.cloudflare.env, options, selectedProvider, selectedModel);
 
         return stream.switchSource(result.toDataStream(dataStreamOptions));
       },
     };
 
-    const result = await streamText(messages, context.cloudflare.env, options);
+    const result = await streamText(messages, context.cloudflare.env, options, selectedProvider, selectedModel);
 
     stream.switchSource(result.toDataStream(dataStreamOptions));
 

@@ -8,6 +8,7 @@ import { useMessageParser, usePromptEnhancer, useShortcuts, useSnapScroll } from
 import { useChatHistory } from '~/lib/persistence';
 import { chatStore } from '~/lib/stores/chat';
 import { workbenchStore } from '~/lib/stores/workbench';
+import { selectedProviderStore, selectedModelStore } from '~/lib/stores/provider';
 import { fileModificationsToHTML } from '~/utils/diff';
 import { cubicEasingFn } from '~/utils/easings';
 import { createScopedLogger, renderLogger } from '~/utils/logger';
@@ -74,6 +75,8 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, initialPro
   const initialPromptSent = useRef(false);
 
   const { showChat } = useStore(chatStore);
+  const provider = useStore(selectedProviderStore);
+  const model = useStore(selectedModelStore);
 
   const [animationScope, animate] = useAnimate();
 
@@ -116,6 +119,10 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, initialPro
 
   const { messages, isLoading, input, handleInputChange, setInput, stop, append } = useChat({
     api: '/api/chat',
+    body: {
+      provider,
+      model,
+    },
     onResponse: async (response) => {
       // intercept non-OK responses before the SDK turns them into a generic error
       if (!response.ok) {

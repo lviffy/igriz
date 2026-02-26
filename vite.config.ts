@@ -10,6 +10,10 @@ export default defineConfig((config) => {
     resolve: {
       dedupe: ['react', 'react-dom', 'react/jsx-runtime', 'react/jsx-dev-runtime'],
     },
+    optimizeDeps: {
+      include: ['remix-island', 'react', 'react-dom', 'react/jsx-runtime', 'react/jsx-dev-runtime'],
+      exclude: ['@ai-sdk/openai', '@ai-sdk/google', '@ai-sdk/groq'],
+    },
     build: {
       target: 'esnext',
     },
