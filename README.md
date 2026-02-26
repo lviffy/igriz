@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="imgs/logo.png" alt="Igriz Logo" width="120"/>
+  <img src="imgs/logo.png" alt="Igriz Logo" width="280"/>
 </p>
 
 # Igriz
