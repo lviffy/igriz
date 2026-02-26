@@ -203,10 +203,10 @@ export function DeployButton() {
         className={classNames(
           'flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md border transition-all duration-200',
           isDeploying
-            ? 'bg-bolt-elements-background-depth-3 border-bolt-elements-borderColor text-bolt-elements-textTertiary cursor-wait'
+            ? 'bg-[#222] border-[#333] text-[#666] cursor-wait'
             : isConnected
               ? 'bg-[#000] border-[#333] text-white hover:bg-[#111] cursor-pointer'
-              : 'bg-bolt-elements-background-depth-2 border-bolt-elements-borderColor text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:border-bolt-elements-borderColorActive cursor-pointer',
+              : 'bg-[#1a1a1a] border-[#333] text-[#aaa] hover:text-white hover:border-[#555] cursor-pointer',
         )}
       >
         {isDeploying ? (
@@ -226,11 +226,11 @@ export function DeployButton() {
 
       {/* Dropdown */}
       {isOpen && (
-        <div className="absolute right-0 top-full mt-1 w-72 bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor rounded-lg shadow-lg z-50 overflow-hidden">
+        <div className="absolute right-0 top-full mt-1 w-72 bg-[#1a1a1a] border border-[#333] rounded-lg shadow-lg z-50 overflow-hidden">
           {/* ── Not connected ── */}
           {!isConnected && view === 'main' && (
             <div className="p-3">
-              <p className="text-[11px] text-bolt-elements-textTertiary mb-3">
+              <p className="text-[11px] text-[#888] mb-3">
                 Connect your Vercel account to deploy projects directly from here.
               </p>
               <button
@@ -244,7 +244,7 @@ export function DeployButton() {
                 href="https://vercel.com/account/tokens"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block mt-2 text-[10px] text-bolt-elements-textTertiary hover:text-bolt-elements-textSecondary text-center transition-colors"
+                className="block mt-2 text-[10px] text-[#666] hover:text-[#999] text-center transition-colors"
               >
                 Get your token from vercel.com/account/tokens ↗
               </a>
@@ -257,19 +257,19 @@ export function DeployButton() {
               <div className="flex items-center gap-1 mb-2">
                 <button
                   onClick={() => setView('main')}
-                  className="text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary transition-colors cursor-pointer"
+                  className="text-[#888] hover:text-[#eee] transition-colors cursor-pointer"
                 >
                   <div className="i-ph:arrow-left text-sm" />
                 </button>
-                <span className="text-xs font-medium text-bolt-elements-textPrimary">Enter Access Token</span>
+                <span className="text-xs font-medium text-[#eee]">Enter Access Token</span>
               </div>
-              <p className="text-[10px] text-bolt-elements-textTertiary mb-2">
+              <p className="text-[10px] text-[#888] mb-2">
                 Create a token at{' '}
                 <a
                   href="https://vercel.com/account/tokens"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="underline hover:text-bolt-elements-textSecondary"
+                  className="underline hover:text-[#bbb]"
                 >
                   vercel.com/account/tokens
                 </a>{' '}
@@ -286,7 +286,7 @@ export function DeployButton() {
                   }
                 }}
                 placeholder="Paste your Vercel token…"
-                className="w-full px-2.5 py-1.5 text-xs bg-bolt-elements-background-depth-3 border border-bolt-elements-borderColor rounded-md text-bolt-elements-textPrimary placeholder:text-bolt-elements-textTertiary focus:outline-none focus:border-bolt-elements-borderColorActive"
+                className="w-full px-2.5 py-1.5 text-xs bg-[#111] border border-[#333] rounded-md text-[#eee] placeholder:text-[#666] focus:outline-none focus:border-[#555]"
               />
               <button
                 onClick={handleConnectWithToken}
@@ -294,7 +294,7 @@ export function DeployButton() {
                 className={classNames(
                   'flex items-center justify-center gap-1.5 w-full mt-2 px-3 py-1.5 text-xs font-medium rounded-md transition-colors',
                   isValidating || !tokenInput.trim()
-                    ? 'bg-bolt-elements-background-depth-3 text-bolt-elements-textTertiary cursor-not-allowed'
+                    ? 'bg-[#222] text-[#666] cursor-not-allowed'
                     : 'bg-[#000] text-white border border-[#333] hover:bg-[#111] cursor-pointer',
                 )}
               >
@@ -314,15 +314,15 @@ export function DeployButton() {
           {isConnected && (
             <>
               {/* User info */}
-              <div className="flex items-center gap-2.5 px-3 py-2.5 border-b border-bolt-elements-borderColor">
-                <div className="flex items-center justify-center w-7 h-7 rounded-full bg-bolt-elements-background-depth-3 text-bolt-elements-textSecondary shrink-0">
+              <div className="flex items-center gap-2.5 px-3 py-2.5 border-b border-[#333]">
+                <div className="flex items-center justify-center w-7 h-7 rounded-full bg-[#222] text-[#aaa] shrink-0">
                   <div className="i-ph:user text-sm" />
                 </div>
                 <div className="min-w-0">
-                  <div className="text-xs font-medium text-bolt-elements-textPrimary truncate">
+                  <div className="text-xs font-medium text-[#eee] truncate">
                     {user?.name || user?.username || 'Vercel User'}
                   </div>
-                  <div className="text-[10px] text-bolt-elements-textTertiary truncate">
+                  <div className="text-[10px] text-[#888] truncate">
                     {user?.email || user?.username}
                   </div>
                 </div>
@@ -335,11 +335,11 @@ export function DeployButton() {
               {/* Deploy action */}
               <button
                 onClick={handleDeploy}
-                className="flex items-center gap-2 w-full px-3 py-2.5 text-xs text-bolt-elements-textPrimary hover:bg-bolt-elements-background-depth-3 transition-colors cursor-pointer"
+                className="flex items-center gap-2 w-full px-3 py-2.5 text-xs text-[#eee] hover:bg-[#252525] transition-colors cursor-pointer"
               >
                 <div className="i-ph:rocket-launch text-sm" />
                 <span>Deploy to Vercel</span>
-                <span className="ml-auto text-[10px] text-bolt-elements-textTertiary">
+                <span className="ml-auto text-[10px] text-[#888]">
                   {user?.username ? `→ ${user.username}'s account` : ''}
                 </span>
               </button>
@@ -350,7 +350,7 @@ export function DeployButton() {
                   href={deployState.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 w-full px-3 py-2 text-xs text-green-400 hover:bg-bolt-elements-background-depth-3 transition-colors"
+                  className="flex items-center gap-2 w-full px-3 py-2 text-xs text-green-400 hover:bg-[#252525] transition-colors"
                 >
                   <div className="i-ph:check-circle text-sm" />
                   <span className="truncate">View last deployment ↗</span>
@@ -367,7 +367,7 @@ export function DeployButton() {
               {/* Disconnect */}
               <button
                 onClick={handleDisconnect}
-                className="flex items-center gap-2 w-full px-3 py-2 text-xs text-red-400 hover:bg-bolt-elements-background-depth-3 transition-colors border-t border-bolt-elements-borderColor cursor-pointer"
+                className="flex items-center gap-2 w-full px-3 py-2 text-xs text-red-400 hover:bg-[#252525] transition-colors border-t border-[#333] cursor-pointer"
               >
                 <div className="i-ph:sign-out text-sm" />
                 <span>Disconnect account</span>
