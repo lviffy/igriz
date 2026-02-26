@@ -1,7 +1,7 @@
 import { type ActionFunctionArgs } from '@remix-run/cloudflare';
 import { MAX_RESPONSE_SEGMENTS, MAX_TOKENS } from '~/lib/.server/llm/constants';
 import { CONTINUE_PROMPT } from '~/lib/.server/llm/prompts';
-import { streamText, type Messages, type StreamingOptions } from '~/lib/.server/llm/stream-text';
+import { streamText, streamTextWithFallback, type Messages, type StreamingOptions } from '~/lib/.server/llm/stream-text';
 import SwitchableStream from '~/lib/.server/llm/switchable-stream';
 import type { LLMProvider } from '~/lib/.server/llm/model';
 
@@ -82,13 +82,13 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
         messages.push({ role: 'assistant', content });
         messages.push({ role: 'user', content: CONTINUE_PROMPT });
 
-        const result = await streamText(messages, context.cloudflare.env, options, selectedProvider, selectedModel);
+        const result = await streamTextWithFallback(messages, context.cloudflare.env, options, selectedProvider, selectedModel);
 
         return stream.switchSource(result.toDataStream(dataStreamOptions));
       },
     };
 
-    const result = await streamText(messages, context.cloudflare.env, options, selectedProvider, selectedModel);
+    const result = await streamTextWithFallback(messages, context.cloudflare.env, options, selectedProvider, selectedModel);
 
     stream.switchSource(result.toDataStream(dataStreamOptions));
 

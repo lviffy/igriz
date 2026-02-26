@@ -1,6 +1,6 @@
 import { type ActionFunctionArgs } from '@remix-run/cloudflare';
 import { parseDataStreamPart } from 'ai';
-import { streamText } from '~/lib/.server/llm/stream-text';
+import { streamTextWithFallback } from '~/lib/.server/llm/stream-text';
 import { stripIndents } from '~/utils/stripIndent';
 import type { LLMProvider } from '~/lib/.server/llm/model';
 
@@ -19,7 +19,7 @@ async function enhancerAction({ context, request }: ActionFunctionArgs) {
   }>();
 
   try {
-    const result = await streamText(
+    const result = await streamTextWithFallback(
       [
         {
           role: 'user',
