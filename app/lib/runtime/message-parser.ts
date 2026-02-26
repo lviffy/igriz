@@ -54,12 +54,15 @@ interface MessageState {
 export class StreamingMessageParser {
   #messages = new Map<string, MessageState>();
 
-  constructor(private _options: StreamingMessageParserOptions = {}) {}
+  constructor(private _options: StreamingMessageParserOptions = {}) {
+    logger.info('[INIT] StreamingMessageParser initialized');
+  }
 
   parse(messageId: string, input: string) {
     let state = this.#messages.get(messageId);
 
     if (!state) {
+      logger.info(`[PARSE] Creating new message state for ${messageId}`);
       state = {
         position: 0,
         insideAction: false,
@@ -70,6 +73,8 @@ export class StreamingMessageParser {
 
       this.#messages.set(messageId, state);
     }
+
+    logger.debug(`[PARSE] Parsing message ${messageId} from position ${state.position}, input length: ${input.length}`);
 
     let output = '';
     let i = state.position;
@@ -98,6 +103,9 @@ export class StreamingMessageParser {
             }
 
             currentAction.content = content;
+
+            logger.info(`[PARSE] Action closing - ID: ${state.actionId - 1}, Type: ${currentAction.type}`);
+            logger.debug(`[PARSE] Action content length: ${currentAction.content.length}`);
 
             this._options.callbacks?.onActionClose?.({
               artifactId: currentArtifact.id,
@@ -132,6 +140,9 @@ export class StreamingMessageParser {
 
               state.currentAction = this.#parseActionTag(input, actionOpenIndex, actionEndIndex);
 
+              logger.info(`[PARSE] Action opening - ID: ${state.actionId}, Type: ${state.currentAction.type}`);
+              logger.debug(`[PARSE] Action details:`, state.currentAction);
+
               this._options.callbacks?.onActionOpen?.({
                 artifactId: currentArtifact.id,
                 messageId,
@@ -144,6 +155,7 @@ export class StreamingMessageParser {
               break;
             }
           } else if (artifactCloseIndex !== -1) {
+            logger.info(`[PARSE] Artifact closing - ID: ${currentArtifact.id}, Title: ${currentArtifact.title}`);
             this._options.callbacks?.onArtifactClose?.({ messageId, ...currentArtifact });
 
             state.insideArtifact = false;
@@ -179,12 +191,14 @@ export class StreamingMessageParser {
               const artifactId = this.#extractAttribute(artifactTag, 'id') as string;
 
               if (!artifactTitle) {
-                logger.warn('Artifact title missing');
+                logger.warn('[PARSE] Artifact title missing');
               }
 
               if (!artifactId) {
-                logger.warn('Artifact id missing');
+                logger.warn('[PARSE] Artifact id missing');
               }
+
+              logger.info(`[PARSE] Artifact opening - ID: ${artifactId}, Title: ${artifactTitle}`);
 
               state.insideArtifact = true;
 
@@ -235,6 +249,7 @@ export class StreamingMessageParser {
   }
 
   reset() {
+    logger.info('[RESET] Clearing all message states');
     this.#messages.clear();
   }
 
@@ -242,6 +257,8 @@ export class StreamingMessageParser {
     const actionTag = input.slice(actionOpenIndex, actionEndIndex + 1);
 
     const actionType = this.#extractAttribute(actionTag, 'type') as ActionType;
+
+    logger.debug(`[PARSE] Parsing action tag - Type: ${actionType}`);
 
     const actionAttributes = {
       type: actionType,
@@ -252,12 +269,14 @@ export class StreamingMessageParser {
       const filePath = this.#extractAttribute(actionTag, 'filePath') as string;
 
       if (!filePath) {
-        logger.debug('File path not specified');
+        logger.warn('[PARSE] File path not specified in file action');
+      } else {
+        logger.debug(`[PARSE] File action for path: ${filePath}`);
       }
 
       (actionAttributes as FileAction).filePath = filePath;
     } else if (actionType !== 'shell') {
-      logger.warn(`Unknown action type '${actionType}'`);
+      logger.warn(`[PARSE] Unknown action type '${actionType}'`);
     }
 
     return actionAttributes as FileAction | ShellAction;

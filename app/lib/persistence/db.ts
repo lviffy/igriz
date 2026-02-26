@@ -20,24 +20,34 @@ export async function openDatabase(): Promise<IDBDatabase | undefined> {
     };
 
     request.onsuccess = (event: Event) => {
+      logger.debug('[DB] Chat history database opened successfully');
       resolve((event.target as IDBOpenDBRequest).result);
     };
 
     request.onerror = (event: Event) => {
+      const error = (event.target as IDBOpenDBRequest).error;
+      logger.debug('[DB] Chat history database unavailable (likely disabled in private mode or blocked by policy)');
       resolve(undefined);
-      logger.error((event.target as IDBOpenDBRequest).error);
     };
   });
 }
 
 export async function getAll(db: IDBDatabase): Promise<ChatHistoryItem[]> {
   return new Promise((resolve, reject) => {
-    const transaction = db.transaction('chats', 'readonly');
-    const store = transaction.objectStore('chats');
-    const request = store.getAll();
+    try {
+      const transaction = db.transaction('chats', 'readonly');
+      const store = transaction.objectStore('chats');
+      const request = store.getAll();
 
-    request.onsuccess = () => resolve(request.result as ChatHistoryItem[]);
-    request.onerror = () => reject(request.error);
+      request.onsuccess = () => resolve(request.result as ChatHistoryItem[]);
+      request.onerror = () => {
+        logger.trace('[DB] Failed to retrieve all chats');
+        reject(request.error);
+      };
+    } catch (error) {
+      logger.trace('[DB] Transaction error in getAll');
+      reject(error);
+    }
   });
 }
 
