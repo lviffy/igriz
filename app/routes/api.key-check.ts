@@ -1,4 +1,4 @@
-﻿import { type LoaderFunctionArgs, json } from '@remix-run/cloudflare';
+﻿import { type LoaderFunctionArgs, json } from '@remix-run/node';
 import { createScopedLogger } from '~/utils/logger';
 
 const logger = createScopedLogger('API:KeyCheck');
@@ -7,7 +7,7 @@ export async function loader({ context }: LoaderFunctionArgs) {
   const { getAPIKeys } = await import('~/lib/.server/llm/api-key');
 
   try {
-    const apiKeys = getAPIKeys(context.cloudflare.env, 'groq');
+    const apiKeys = getAPIKeys(process.env as unknown as Env, 'groq');
 
     logger.debug('[KEY-CHECK] Checking API key validity...');
 

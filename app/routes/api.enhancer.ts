@@ -1,4 +1,4 @@
-import { type ActionFunctionArgs } from '@remix-run/cloudflare';
+import { type ActionFunctionArgs } from '@remix-run/node';
 
 export async function action(args: ActionFunctionArgs) {
   const { enhancerAction } = await import('~/lib/.server/actions/enhancer');

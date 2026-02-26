@@ -1,0 +1,212 @@
+{
+  "buildManifest": {
+    "serverBundles": {
+      "nodejs-eyJydW50aW1lIjoibm9kZWpzIn0": {
+        "id": "nodejs-eyJydW50aW1lIjoibm9kZWpzIn0",
+        "file": "build/server/nodejs-eyJydW50aW1lIjoibm9kZWpzIn0/index.js",
+        "config": {
+          "runtime": "nodejs"
+        }
+      }
+    },
+    "routeIdToServerBundleId": {
+      "routes/api.github-export": "nodejs-eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/api.vercel-deploy": "nodejs-eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/api.github-user": "nodejs-eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/api.vercel-user": "nodejs-eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/api.key-check": "nodejs-eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/api.enhancer": "nodejs-eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/api.chat": "nodejs-eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/chat.$id": "nodejs-eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/_index": "nodejs-eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/$": "nodejs-eyJydW50aW1lIjoibm9kZWpzIn0"
+    },
+    "routes": {
+      "root": {
+        "path": "",
+        "id": "root",
+        "file": "app/root.tsx",
+        "config": {}
+      },
+      "routes/api.github-export": {
+        "file": "app/routes/api.github-export.ts",
+        "id": "routes/api.github-export",
+        "path": "api/github-export",
+        "parentId": "root",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/api.vercel-deploy": {
+        "file": "app/routes/api.vercel-deploy.ts",
+        "id": "routes/api.vercel-deploy",
+        "path": "api/vercel-deploy",
+        "parentId": "root",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/api.github-user": {
+        "file": "app/routes/api.github-user.ts",
+        "id": "routes/api.github-user",
+        "path": "api/github-user",
+        "parentId": "root",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/api.vercel-user": {
+        "file": "app/routes/api.vercel-user.ts",
+        "id": "routes/api.vercel-user",
+        "path": "api/vercel-user",
+        "parentId": "root",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/api.key-check": {
+        "file": "app/routes/api.key-check.ts",
+        "id": "routes/api.key-check",
+        "path": "api/key-check",
+        "parentId": "root",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/api.enhancer": {
+        "file": "app/routes/api.enhancer.ts",
+        "id": "routes/api.enhancer",
+        "path": "api/enhancer",
+        "parentId": "root",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/api.chat": {
+        "file": "app/routes/api.chat.ts",
+        "id": "routes/api.chat",
+        "path": "api/chat",
+        "parentId": "root",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/chat.$id": {
+        "file": "app/routes/chat.$id.tsx",
+        "id": "routes/chat.$id",
+        "path": "chat/:id",
+        "parentId": "root",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/_index": {
+        "file": "app/routes/_index.tsx",
+        "id": "routes/_index",
+        "index": true,
+        "parentId": "root",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/$": {
+        "file": "app/routes/$.tsx",
+        "id": "routes/$",
+        "path": "*",
+        "parentId": "root",
+        "config": {
+          "runtime": "nodejs"
+        }
+      }
+    }
+  },
+  "remixConfig": {
+    "appDirectory": "/home/lviffy/Projects/backup-hacksrm/HACKSRM/app",
+    "basename": "/",
+    "buildDirectory": "/home/lviffy/Projects/backup-hacksrm/HACKSRM/build",
+    "future": {
+      "v3_fetcherPersist": true,
+      "v3_relativeSplatPath": true,
+      "v3_throwAbortReason": true,
+      "unstable_singleFetch": false,
+      "unstable_fogOfWar": false
+    },
+    "manifest": false,
+    "publicPath": "/",
+    "routes": {
+      "root": {
+        "path": "",
+        "id": "root",
+        "file": "root.tsx"
+      },
+      "routes/api.github-export": {
+        "file": "routes/api.github-export.ts",
+        "id": "routes/api.github-export",
+        "path": "api/github-export",
+        "parentId": "root"
+      },
+      "routes/api.vercel-deploy": {
+        "file": "routes/api.vercel-deploy.ts",
+        "id": "routes/api.vercel-deploy",
+        "path": "api/vercel-deploy",
+        "parentId": "root"
+      },
+      "routes/api.github-user": {
+        "file": "routes/api.github-user.ts",
+        "id": "routes/api.github-user",
+        "path": "api/github-user",
+        "parentId": "root"
+      },
+      "routes/api.vercel-user": {
+        "file": "routes/api.vercel-user.ts",
+        "id": "routes/api.vercel-user",
+        "path": "api/vercel-user",
+        "parentId": "root"
+      },
+      "routes/api.key-check": {
+        "file": "routes/api.key-check.ts",
+        "id": "routes/api.key-check",
+        "path": "api/key-check",
+        "parentId": "root"
+      },
+      "routes/api.enhancer": {
+        "file": "routes/api.enhancer.ts",
+        "id": "routes/api.enhancer",
+        "path": "api/enhancer",
+        "parentId": "root"
+      },
+      "routes/api.chat": {
+        "file": "routes/api.chat.ts",
+        "id": "routes/api.chat",
+        "path": "api/chat",
+        "parentId": "root"
+      },
+      "routes/chat.$id": {
+        "file": "routes/chat.$id.tsx",
+        "id": "routes/chat.$id",
+        "path": "chat/:id",
+        "parentId": "root"
+      },
+      "routes/_index": {
+        "file": "routes/_index.tsx",
+        "id": "routes/_index",
+        "index": true,
+        "parentId": "root"
+      },
+      "routes/$": {
+        "file": "routes/$.tsx",
+        "id": "routes/$",
+        "path": "*",
+        "parentId": "root"
+      }
+    },
+    "serverBuildFile": "index.js",
+    "serverModuleFormat": "esm",
+    "ssr": true
+  },
+  "viteConfig": {
+    "build": {
+      "assetsDir": "assets"
+    }
+  }
+}

@@ -1,4 +1,4 @@
-import { type ActionFunctionArgs, json } from '@remix-run/cloudflare';
+import { type ActionFunctionArgs, json } from '@remix-run/node';
 
 const encoder = new TextEncoder();
 

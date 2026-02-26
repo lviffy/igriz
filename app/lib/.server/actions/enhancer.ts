@@ -1,4 +1,4 @@
-import { type ActionFunctionArgs } from '@remix-run/cloudflare';
+import { type ActionFunctionArgs } from '@remix-run/node';
 import { parseDataStreamPart } from 'ai';
 import { streamTextWithFallback } from '~/lib/.server/llm/stream-text';
 import { stripIndents } from '~/utils/stripIndent';
@@ -32,7 +32,7 @@ export async function enhancerAction({ context, request }: ActionFunctionArgs) {
         `,
         },
       ],
-      context.cloudflare.env,
+      process.env as unknown as Env,
       undefined,
       provider || 'groq',
       model,

@@ -1,4 +1,4 @@
-import { type ActionFunctionArgs } from '@remix-run/cloudflare';
+import { type ActionFunctionArgs } from '@remix-run/node';
 import { MAX_RESPONSE_SEGMENTS, MAX_TOKENS } from '~/lib/.server/llm/constants';
 import { CONTINUE_PROMPT } from '~/lib/.server/llm/prompts';
 import { streamTextWithFallback, type Messages, type StreamingOptions } from '~/lib/.server/llm/stream-text';
@@ -80,13 +80,13 @@ export async function chatAction({ context, request }: ActionFunctionArgs) {
         messages.push({ role: 'assistant', content });
         messages.push({ role: 'user', content: CONTINUE_PROMPT });
 
-        const result = await streamTextWithFallback(messages, context.cloudflare.env, options, selectedProvider, selectedModel);
+        const result = await streamTextWithFallback(messages, process.env as unknown as Env, options, selectedProvider, selectedModel);
 
         return stream.switchSource(result.toDataStream(dataStreamOptions));
       },
     };
 
-    const result = await streamTextWithFallback(messages, context.cloudflare.env, options, selectedProvider, selectedModel);
+    const result = await streamTextWithFallback(messages, process.env as unknown as Env, options, selectedProvider, selectedModel);
 
     stream.switchSource(result.toDataStream(dataStreamOptions));
 
