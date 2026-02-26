@@ -3,7 +3,7 @@ import { createReadableStreamFromReadable } from '@remix-run/node';
 import { RemixServer } from '@remix-run/react';
 import { isbot } from 'isbot';
 import { renderToPipeableStream } from 'react-dom/server';
-import { PassThrough } from 'node:stream';
+import { PassThrough, Transform } from 'node:stream';
 import { renderHeadToString } from 'remix-island';
 import { Head } from './root';
 import { themeStore } from '~/lib/stores/theme';
@@ -26,7 +26,6 @@ export default function handleRequest(
       <RemixServer context={remixContext} url={request.url} abortDelay={ABORT_DELAY} />,
       {
         onAllReady() {
-          // For bots: wait until entire document is ready
           if (!prohibitOutOfOrderStreaming) {
             return;
           }
@@ -34,7 +33,6 @@ export default function handleRequest(
           respondWith();
         },
         onShellReady() {
-          // For regular users: stream as soon as shell is ready
           if (prohibitOutOfOrderStreaming) {
             return;
           }
@@ -61,32 +59,29 @@ export default function handleRequest(
       const htmlPrefix = `<!DOCTYPE html><html lang="en" data-theme="${themeStore.value}"><head>${head}</head><body><div id="root" class="w-full h-full">`;
       const htmlSuffix = `</div></body></html>`;
 
-      const passthrough = new PassThrough();
+      const body = new PassThrough();
+      body.write(htmlPrefix);
 
-      // Write opening HTML before piping React output
-      passthrough.write(htmlPrefix);
-
-      // Pipe React rendered output into passthrough
-      pipe(passthrough);
-
-      // When React finishes, append closing HTML
-      passthrough.on('end', () => {});
-
-      // We need to intercept the end to append our suffix
-      const wrappedStream = new PassThrough();
-      passthrough.on('data', (chunk: Buffer) => wrappedStream.write(chunk));
-      passthrough.on('end', () => {
-        wrappedStream.write(htmlSuffix);
-        wrappedStream.end();
+      // Use a transform to append suffix when React stream ends
+      const appendSuffix = new Transform({
+        transform(chunk, _encoding, callback) {
+          callback(null, chunk);
+        },
+        flush(callback) {
+          this.push(htmlSuffix);
+          callback();
+        },
       });
-      passthrough.on('error', (err) => wrappedStream.destroy(err));
+
+      pipe(appendSuffix);
+      appendSuffix.pipe(body, { end: true });
 
       responseHeaders.set('Content-Type', 'text/html');
       responseHeaders.set('Cross-Origin-Embedder-Policy', 'require-corp');
       responseHeaders.set('Cross-Origin-Opener-Policy', 'same-origin');
 
       resolve(
-        new Response(createReadableStreamFromReadable(wrappedStream), {
+        new Response(createReadableStreamFromReadable(body), {
           headers: responseHeaders,
           status: responseStatusCode,
         }),
