@@ -1,12 +1,12 @@
 ﻿import { type LoaderFunctionArgs, json } from '@remix-run/cloudflare';
-import { getAPIKey } from '~/lib/.server/llm/api-key';
+import { getAPIKeys } from '~/lib/.server/llm/api-key';
 import { createScopedLogger } from '~/utils/logger';
 
 const logger = createScopedLogger('API:KeyCheck');
 
 export async function loader({ context }: LoaderFunctionArgs) {
   try {
-    const apiKeys = getAllAPIKeys(context.cloudflare.env);
+    const apiKeys = getAPIKeys(context.cloudflare.env, 'groq');
 
     logger.debug('[KEY-CHECK] Checking API key validity...');
 
@@ -29,8 +29,7 @@ export async function loader({ context }: LoaderFunctionArgs) {
 
     const validCount = results.filter((r) => r.valid).length;
 
-    if (!response.ok) {
-      const text = await response.text();
+    if (validCount === 0) {
       logger.warn(`[KEY-CHECK] API validation failed`);
       return json(
         {

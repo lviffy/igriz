@@ -19,7 +19,7 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
   const selectedProvider = provider || 'groq';
   const selectedModel = model;
 
-  logger.debug(`[CHAT] Processing chat request`);
+  console.log(`[CHAT] Processing chat request — provider=${selectedProvider}`);
 
   const stream = new SwitchableStream();
 
@@ -79,7 +79,7 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
 
         const switchesLeft = MAX_RESPONSE_SEGMENTS - stream.switches;
 
-        logger.info(`[CHAT] Reached max token limit (${MAX_TOKENS}): Continuing message (${switchesLeft} switches left)`);
+        console.log(`[CHAT] Reached max token limit (${MAX_TOKENS}): Continuing message (${switchesLeft} switches left)`);
 
         messages.push({ role: 'assistant', content });
         messages.push({ role: 'user', content: CONTINUE_PROMPT });
@@ -94,7 +94,7 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
 
     stream.switchSource(result.toDataStream(dataStreamOptions));
 
-    logger.info('[CHAT] Successfully started streaming response');
+    console.log('[CHAT] Successfully started streaming response');
 
     return new Response(stream.readable, {
       status: 200,
@@ -103,10 +103,10 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
       },
     });
   } catch (error: unknown) {
-    logger.error('[CHAT] Chat error:', error);
+    console.error('[CHAT] Chat error:', error);
 
     const detail = extractErrorDetail(error);
-    logger.error('[CHAT] Error detail:', detail);
+    console.error('[CHAT] Error detail:', detail);
 
     return new Response(JSON.stringify({ error: detail.message, code: detail.code }), {
       status: detail.status,
