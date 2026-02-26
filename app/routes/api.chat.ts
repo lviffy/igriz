@@ -3,6 +3,9 @@ import { MAX_RESPONSE_SEGMENTS, MAX_TOKENS } from '~/lib/.server/llm/constants';
 import { CONTINUE_PROMPT } from '~/lib/.server/llm/prompts';
 import { streamText, type Messages, type StreamingOptions } from '~/lib/.server/llm/stream-text';
 import SwitchableStream from '~/lib/.server/llm/switchable-stream';
+import { createScopedLogger } from '~/utils/logger';
+
+const logger = createScopedLogger('API:Chat');
 
 export async function action(args: ActionFunctionArgs) {
   return chatAction(args);
@@ -10,6 +13,8 @@ export async function action(args: ActionFunctionArgs) {
 
 async function chatAction({ context, request }: ActionFunctionArgs) {
   const { messages } = await request.json<{ messages: Messages }>();
+
+  logger.debug(`[CHAT] Processing chat request`);
 
   const stream = new SwitchableStream();
 
@@ -69,7 +74,7 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
 
         const switchesLeft = MAX_RESPONSE_SEGMENTS - stream.switches;
 
-        console.log(`Reached max token limit (${MAX_TOKENS}): Continuing message (${switchesLeft} switches left)`);
+        logger.info(`[CHAT] Reached max token limit (${MAX_TOKENS}): Continuing message (${switchesLeft} switches left)`);
 
         messages.push({ role: 'assistant', content });
         messages.push({ role: 'user', content: CONTINUE_PROMPT });
@@ -84,6 +89,8 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
 
     stream.switchSource(result.toDataStream(dataStreamOptions));
 
+    logger.info('[CHAT] Successfully started streaming response');
+
     return new Response(stream.readable, {
       status: 200,
       headers: {
@@ -91,10 +98,10 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
       },
     });
   } catch (error: unknown) {
-    console.error('Chat error:', error);
+    logger.error('[CHAT] Chat error:', error);
 
     const detail = extractErrorDetail(error);
-    console.error('Error detail:', detail);
+    logger.error('[CHAT] Error detail:', detail);
 
     return new Response(JSON.stringify({ error: detail.message, code: detail.code }), {
       status: detail.status,

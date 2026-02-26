@@ -59,6 +59,7 @@ export class ActionRunner {
 
   constructor(webcontainerPromise: Promise<WebContainer>) {
     this.#webcontainer = webcontainerPromise;
+    logger.info('[INIT] ActionRunner initialized');
   }
 
   addAction(data: ActionCallbackData) {
@@ -68,9 +69,13 @@ export class ActionRunner {
     const action = actions[actionId];
 
     if (action) {
+      logger.debug(`[ADD] Action ${actionId} already exists, skipping`);
       // action already added
       return;
     }
+
+    logger.info(`[ADD] Adding new action ${actionId} of type: ${data.action.type}`);
+    logger.debug(`[ADD] Action details:`, data.action);
 
     const abortController = new AbortController();
 
@@ -79,6 +84,7 @@ export class ActionRunner {
       status: 'pending',
       executed: false,
       abort: () => {
+        logger.warn(`[ABORT] Aborting action ${actionId}`);
         abortController.abort();
         this.#updateAction(actionId, { status: 'aborted' });
       },
@@ -99,9 +105,11 @@ export class ActionRunner {
     }
 
     if (action.executed) {
+      logger.debug(`[RUN] Action ${actionId} already executed, skipping`);
       return;
     }
 
+    logger.info(`[RUN] Queueing action ${actionId} for execution`);
     this.#updateAction(actionId, { ...action, ...data.action, executed: true });
 
     this.#currentExecutionPromise = this.#currentExecutionPromise
@@ -109,7 +117,7 @@ export class ActionRunner {
         return this.#executeAction(actionId);
       })
       .catch((error) => {
-        console.error('Action failed:', error);
+        logger.error(`[RUN] Action ${actionId} failed:`, error);
       });
   }
 
@@ -136,22 +144,28 @@ export class ActionRunner {
   async #executeAction(actionId: string) {
     const action = this.actions.get()[actionId];
 
+    logger.info(`[EXECUTE] Starting execution of action ${actionId} (type: ${action.type})`);
     this.#updateAction(actionId, { status: 'running' });
 
     try {
       switch (action.type) {
         case 'shell': {
+          logger.debug(`[EXECUTE] Running shell action ${actionId}`);
           await this.#runShellAction(action, actionId);
           break;
         }
         case 'file': {
+          logger.debug(`[EXECUTE] Running file action ${actionId}`);
           await this.#runFileAction(action);
           break;
         }
       }
 
-      this.#updateAction(actionId, { status: action.abortSignal.aborted ? 'aborted' : 'complete' });
+      const finalStatus = action.abortSignal.aborted ? 'aborted' : 'complete';
+      logger.info(`[EXECUTE] Action ${actionId} completed with status: ${finalStatus}`);
+      this.#updateAction(actionId, { status: finalStatus });
     } catch (error) {
+      logger.error(`[EXECUTE] Action ${actionId} failed:`, error);
       this.#updateAction(actionId, { status: 'failed', error: 'Action failed' });
 
       // re-throw the error to be caught in the promise chain
@@ -164,13 +178,18 @@ export class ActionRunner {
       unreachable('Expected shell action');
     }
 
+    logger.info(`[SHELL] Executing shell command for action ${actionId}`);
+    logger.debug(`[SHELL] Command: ${action.content}`);
+
     const webcontainer = await this.#webcontainer;
 
+    logger.debug(`[SHELL] Spawning jsh process with npm_config_yes=true`);
     const process = await webcontainer.spawn('jsh', ['-c', action.content], {
       env: { npm_config_yes: true },
     });
 
     action.abortSignal.addEventListener('abort', () => {
+      logger.warn(`[SHELL] Abort signal received, killing process for action ${actionId}`);
       process.kill();
     });
 
@@ -180,7 +199,7 @@ export class ActionRunner {
     process.output.pipeTo(
       new WritableStream({
         write(data) {
-          console.log(data);
+          logger.trace(`[SHELL OUTPUT] ${data}`);
 
           // keep last 4000 chars to avoid memory bloat
           outputText += data;
@@ -194,12 +213,14 @@ export class ActionRunner {
 
     const exitCode = await process.exit;
 
-    logger.debug(`Process terminated with code ${exitCode}`);
+    logger.info(`[SHELL] Process terminated with exit code ${exitCode} for action ${actionId}`);
 
     // store output on the action state
     this.#updateAction(actionId, { output: outputText });
 
     if (exitCode !== 0) {
+      logger.error(`[SHELL] Command failed with exit code ${exitCode}`);
+      logger.error(`[SHELL] Output: ${outputText}`);
       // mark as failed with the captured output
       this.#updateAction(actionId, {
         status: 'failed',
@@ -216,6 +237,9 @@ export class ActionRunner {
       unreachable('Expected file action');
     }
 
+    logger.info(`[FILE] Writing file: ${action.filePath}`);
+    logger.debug(`[FILE] Content length: ${action.content.length} bytes`);
+
     const webcontainer = await this.#webcontainer;
 
     let folder = nodePath.dirname(action.filePath);
@@ -225,23 +249,29 @@ export class ActionRunner {
 
     if (folder !== '.') {
       try {
+        logger.debug(`[FILE] Creating directory: ${folder}`);
         await webcontainer.fs.mkdir(folder, { recursive: true });
-        logger.debug('Created folder', folder);
+        logger.debug(`[FILE] Successfully created folder: ${folder}`);
       } catch (error) {
-        logger.error('Failed to create folder\n\n', error);
+        logger.error(`[FILE] Failed to create folder ${folder}:`, error);
       }
     }
 
     try {
       await webcontainer.fs.writeFile(action.filePath, action.content);
-      logger.debug(`File written ${action.filePath}`);
+      logger.info(`[FILE] Successfully written: ${action.filePath}`);
     } catch (error) {
-      logger.error('Failed to write file\n\n', error);
+      logger.error(`[FILE] Failed to write file ${action.filePath}:`, error);
     }
   }
 
   #updateAction(id: string, newState: ActionStateUpdate) {
     const actions = this.actions.get();
+    const currentAction = actions[id];
+
+    if ('status' in newState && newState.status !== currentAction?.status) {
+      logger.debug(`[UPDATE] Action ${id} status: ${currentAction?.status} -> ${newState.status}`);
+    }
 
     this.actions.setKey(id, { ...actions[id], ...newState });
   }
