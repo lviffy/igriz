@@ -1,10 +1,11 @@
 ﻿import { type LoaderFunctionArgs, json } from '@remix-run/cloudflare';
-import { getAPIKeys } from '~/lib/.server/llm/api-key';
 import { createScopedLogger } from '~/utils/logger';
 
 const logger = createScopedLogger('API:KeyCheck');
 
 export async function loader({ context }: LoaderFunctionArgs) {
+  const { getAPIKeys } = await import('~/lib/.server/llm/api-key');
+
   try {
     const apiKeys = getAPIKeys(context.cloudflare.env, 'groq');
 
