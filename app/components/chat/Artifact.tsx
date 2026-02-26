@@ -120,6 +120,59 @@ function ShellCodeBlock({ classsName, code }: ShellCodeBlockProps) {
   );
 }
 
+interface ExplorerLink {
+  label: string;
+  url: string;
+}
+
+function extractExplorerLinks(output?: string): ExplorerLink[] {
+  if (!output) {
+    return [];
+  }
+
+  const links: ExplorerLink[] = [];
+
+  // Match "View contract on explorer: <url>"
+  const contractMatch = output.match(/View contract on explorer:\s*(https?:\/\/\S+)/i);
+
+  if (contractMatch) {
+    links.push({ label: 'View Contract on Explorer', url: contractMatch[1] });
+  }
+
+  // Match "View transaction on explorer: <url>"
+  const txMatch = output.match(/View transaction on explorer:\s*(https?:\/\/\S+)/i);
+
+  if (txMatch) {
+    links.push({ label: 'View Transaction on Explorer', url: txMatch[1] });
+  }
+
+  // Match "Contract deployed to: <address>" (fallback if no explorer URL logged)
+  if (!contractMatch) {
+    const deployedMatch = output.match(/Contract deployed to:\s*(0x[a-fA-F0-9]+)/i);
+
+    if (deployedMatch) {
+      links.push({
+        label: 'View Contract on Explorer',
+        url: `https://orchard.quaiscan.io/address/${deployedMatch[1]}`,
+      });
+    }
+  }
+
+  // Match "Contract already deployed at: <address>" (skip case)
+  if (!contractMatch) {
+    const alreadyMatch = output.match(/Contract already deployed at:\s*(0x[a-fA-F0-9]+)/i);
+
+    if (alreadyMatch) {
+      links.push({
+        label: 'View Contract on Explorer',
+        url: `https://orchard.quaiscan.io/address/${alreadyMatch[1]}`,
+      });
+    }
+  }
+
+  return links;
+}
+
 interface ActionListProps {
   actions: ActionState[];
 }
@@ -176,11 +229,31 @@ const ActionList = memo(({ actions }: ActionListProps) => {
               {type === 'shell' && (
                 <ShellCodeBlock
                   classsName={classNames('mt-1', {
-                    'mb-3.5': !isLast,
+                    'mb-3.5': !isLast && extractExplorerLinks(action.output).length === 0,
                   })}
                   code={content}
                 />
               )}
+              {type === 'shell' && status === 'complete' && (() => {
+                const explorerLinks = extractExplorerLinks(action.output);
+
+                return explorerLinks.length > 0 ? (
+                  <div className={classNames('mt-2 flex flex-col gap-1.5', { 'mb-3.5': !isLast })}>
+                    {explorerLinks.map((link, i) => (
+                      <a
+                        key={i}
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 text-xs text-bolt-elements-icon-success hover:underline"
+                      >
+                        <span className="i-ph:arrow-square-out text-sm" />
+                        {link.label}
+                      </a>
+                    ))}
+                  </div>
+                ) : null;
+              })()}
             </motion.li>
           );
         })}

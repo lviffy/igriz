@@ -326,7 +326,7 @@ export const getBlockchainSystemPrompt = (
     - RPC URL: ${quaiRpcUrl}
     - Chain ID: 15000
     - Currency: QUAI
-    - Explorer: https://quaiscan.io/
+    - Explorer: https://orchard.quaiscan.io/
     ${quaiPrivateKey ? `- The user's Quai wallet private key for contract deployment is: ${quaiPrivateKey}` : '- No Quai wallet private key has been configured. Ask the user to provide one if they want to deploy contracts.'}
   </quai_network_configuration>
 
@@ -535,6 +535,7 @@ export const getBlockchainSystemPrompt = (
               const existing = JSON.parse(fs.readFileSync(deployedContractPath, 'utf8'));
               if (existing.deployed === true && existing.address && existing.address !== '') {
                 console.log('Contract already deployed at:', existing.address);
+                console.log('View contract on explorer: https://orchard.quaiscan.io/address/' + existing.address);
                 console.log('Skipping deployment. Delete src/contracts/deployedContract.json to force re-deploy.');
                 process.exit(0);
               }
@@ -557,11 +558,14 @@ export const getBlockchainSystemPrompt = (
 
           console.log('Deploying contract...');
           const contract = await factory.deploy(/* constructor arguments if any */);
-          console.log('Transaction broadcasted:', contract.deploymentTransaction().hash);
+          const txHash = contract.deploymentTransaction().hash;
+          console.log('Transaction broadcasted:', txHash);
+          console.log('View transaction on explorer: https://orchard.quaiscan.io/tx/' + txHash);
 
           await contract.waitForDeployment();
           const contractAddress = await contract.getAddress();
           console.log('Contract deployed to:', contractAddress);
+          console.log('View contract on explorer: https://orchard.quaiscan.io/address/' + contractAddress);
 
           // Save deployment info for frontend integration (overwrites placeholder)
           const deploymentInfo = {
@@ -660,7 +664,8 @@ export const getBlockchainSystemPrompt = (
         - Show contract data using read-only provider when deployed
         - Include a "Connect Wallet" button for write operations
         - Handle transaction states (pending, confirmed, failed) with proper UX
-        - Display transaction hashes with links to the Quai explorer: https://quaiscan.io/tx/{hash}
+        - Display transaction hashes with links to the Quai explorer: https://orchard.quaiscan.io/tx/{hash}
+        - Display contract addresses with links to the Quai explorer: https://orchard.quaiscan.io/address/{address}
 
       Step 10: Create vite.config.js for the frontend with this pattern:
         import { defineConfig } from 'vite';
