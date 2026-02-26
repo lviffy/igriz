@@ -2,6 +2,7 @@ import { useStore } from '@nanostores/react';
 import { workbenchStore } from '~/lib/stores/workbench';
 import { classNames } from '~/utils/classNames';
 import { DeployButton } from './DeployButton.client';
+import { GitHubExportButton } from './GitHubExportButton.client';
 
 interface HeaderActionButtonsProps {}
 
@@ -60,7 +61,8 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
       </span>
 
       {/* Vercel Deploy */}
-      <div className="ml-2 pl-2 border-l border-bolt-elements-borderColor">
+      <div className="ml-2 pl-2 border-l border-bolt-elements-borderColor flex items-center gap-2">
+        <GitHubExportButton />
         <DeployButton />
       </div>
     </div>
