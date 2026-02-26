@@ -1,10 +1,8 @@
 import { type ActionFunctionArgs } from '@remix-run/cloudflare';
 import { parseDataStreamPart } from 'ai';
-import { streamText } from '~/lib/.server/llm/stream-text';
+import { streamTextWithFallback } from '~/lib/.server/llm/stream-text';
 import { stripIndents } from '~/utils/stripIndent';
-import { createScopedLogger } from '~/utils/logger';
-
-const logger = createScopedLogger('API:Enhancer');
+import type { LLMProvider } from '~/lib/.server/llm/model';
 
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
@@ -14,12 +12,16 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 async function enhancerAction({ context, request }: ActionFunctionArgs) {
-  const { message } = await request.json<{ message: string }>();
+  const { message, provider, model } = await request.json<{
+    message: string;
+    provider?: LLMProvider;
+    model?: string;
+  }>();
 
   logger.debug('[ENHANCER] Processing prompt enhancement');
 
   try {
-    const result = await streamText(
+    const result = await streamTextWithFallback(
       [
         {
           role: 'user',
@@ -35,6 +37,9 @@ async function enhancerAction({ context, request }: ActionFunctionArgs) {
         },
       ],
       context.cloudflare.env,
+      undefined,
+      provider || 'groq',
+      model,
     );
 
     const transformStream = new TransformStream({

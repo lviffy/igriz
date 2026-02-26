@@ -1,6 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { ClientOnly } from 'remix-utils/client-only';
 import { Menu } from '~/components/sidebar/Menu.client';
+import {
+  PROVIDER_LIST,
+  selectedProviderStore,
+  setProvider,
+} from '~/lib/stores/provider';
 
 interface LandingPageProps {
   onLaunch: (prompt?: string) => void;
@@ -57,6 +62,25 @@ const USE_CASES = [
 
 export function LandingPage({ onLaunch }: LandingPageProps) {
   const [prompt, setPrompt] = useState('');
+  const [providerOpen, setProviderOpen] = useState(false);
+  const [currentProvider, setCurrentProvider] = useState(() => selectedProviderStore.get());
+  const providerRef = useRef<HTMLDivElement>(null);
+
+  const providerConfig = PROVIDER_LIST.find((p) => p.id === currentProvider) || PROVIDER_LIST[0];
+
+  // close dropdown on outside click
+  useEffect(() => {
+    if (!providerOpen) return;
+
+    const handler = (e: MouseEvent) => {
+      if (providerRef.current && !providerRef.current.contains(e.target as Node)) {
+        setProviderOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [providerOpen]);
 
   const handleSubmit = () => {
     onLaunch(prompt.trim() || undefined);
@@ -114,6 +138,33 @@ export function LandingPage({ onLaunch }: LandingPageProps) {
             rows={2}
           />
           <div className="landing-input-actions">
+            <div ref={providerRef} className="landing-provider-wrapper">
+              <button
+                className="landing-provider-btn"
+                onClick={() => setProviderOpen(!providerOpen)}
+              >
+                <span>{providerConfig.label}</span>
+                <div className={`i-ph:caret-down landing-provider-caret ${providerOpen ? 'open' : ''}`} />
+              </button>
+              {providerOpen && (
+                <div className="landing-provider-dropdown">
+                  {PROVIDER_LIST.map((p) => (
+                    <button
+                      key={p.id}
+                      className={`landing-provider-option ${p.id === currentProvider ? 'active' : ''}`}
+                      onClick={() => {
+                        setProvider(p.id);
+                        setCurrentProvider(p.id);
+                        setProviderOpen(false);
+                      }}
+                    >
+                      <div className={`landing-provider-dot ${p.id === currentProvider ? 'active' : ''}`} />
+                      <span>{p.label}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
             <button className="landing-btn-build" onClick={handleSubmit}>
               Build now ▶
             </button>
