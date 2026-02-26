@@ -54,6 +54,8 @@ export class FilesStore {
   constructor(webcontainerPromise: Promise<WebContainer>) {
     this.#webcontainer = webcontainerPromise;
 
+    logger.trace('[INIT] FilesStore initialized');
+
     if (import.meta.hot) {
       import.meta.hot.data.files = this.files;
       import.meta.hot.data.modifiedFiles = this.#modifiedFiles;
@@ -66,21 +68,28 @@ export class FilesStore {
     const dirent = this.files.get()[filePath];
 
     if (dirent?.type !== 'file') {
+      logger.debug(`[GET] File not found or is a folder: ${filePath}`);
       return undefined;
     }
 
+    logger.trace(`[GET] Retrieved file: ${filePath}`);
     return dirent;
   }
 
   getFileModifications() {
+    logger.debug(`[MODIFICATIONS] Getting file modifications (${this.#modifiedFiles.size} modified files)`);
     return computeFileModifications(this.files.get(), this.#modifiedFiles);
   }
 
   resetFileModifications() {
+    logger.info(`[MODIFICATIONS] Resetting ${this.#modifiedFiles.size} modified files`);
     this.#modifiedFiles.clear();
   }
 
   async saveFile(filePath: string, content: string) {
+    logger.info(`[SAVE] Saving file: ${filePath}`);
+    logger.debug(`[SAVE] Content length: ${content.length} bytes`);
+
     const webcontainer = await this.#webcontainer;
 
     try {
@@ -96,50 +105,62 @@ export class FilesStore {
         unreachable('Expected content to be defined');
       }
 
+      logger.debug(`[SAVE] Writing to relative path: ${relativePath}`);
       await webcontainer.fs.writeFile(relativePath, content);
 
       if (!this.#modifiedFiles.has(filePath)) {
+        logger.debug(`[SAVE] Tracking file modification: ${filePath}`);
         this.#modifiedFiles.set(filePath, oldContent);
       }
 
       // we immediately update the file and don't rely on the `change` event coming from the watcher
       this.files.setKey(filePath, { type: 'file', content, isBinary: false });
 
-      logger.info('File updated');
+      logger.info(`[SAVE] File successfully saved: ${filePath}`);
     } catch (error) {
-      logger.error('Failed to update file content\n\n', error);
+      logger.error(`[SAVE] Failed to update file ${filePath}:`, error);
 
       throw error;
     }
   }
 
   async #init() {
+    logger.info('[INIT] Initializing file watcher...');
     const webcontainer = await this.#webcontainer;
 
+    logger.debug(`[INIT] Setting up path watcher for: ${WORK_DIR}/**`);
     webcontainer.internal.watchPaths(
       { include: [`${WORK_DIR}/**`], exclude: ['**/node_modules', '.git'], includeContent: true },
       bufferWatchEvents(100, this.#processEventBuffer.bind(this)),
     );
+    logger.info('[INIT] File watcher initialized');
   }
 
   #processEventBuffer(events: Array<[events: PathWatcherEvent[]]>) {
     const watchEvents = events.flat(2);
 
+    logger.debug(`[WATCHER] Processing ${watchEvents.length} file system events`);
+
     for (const { type, path, buffer } of watchEvents) {
       // remove any trailing slashes
       const sanitizedPath = path.replace(/\/+$/g, '');
 
+      logger.trace(`[WATCHER] Event: ${type} - ${sanitizedPath}`);
+
       switch (type) {
         case 'add_dir': {
+          logger.debug(`[WATCHER] Adding directory: ${sanitizedPath}`);
           // we intentionally add a trailing slash so we can distinguish files from folders in the file tree
           this.files.setKey(sanitizedPath, { type: 'folder' });
           break;
         }
         case 'remove_dir': {
+          logger.debug(`[WATCHER] Removing directory and contents: ${sanitizedPath}`);
           this.files.setKey(sanitizedPath, undefined);
 
           for (const [direntPath] of Object.entries(this.files)) {
             if (direntPath.startsWith(sanitizedPath)) {
+              logger.trace(`[WATCHER] Removing child path: ${direntPath}`);
               this.files.setKey(direntPath, undefined);
             }
           }
@@ -150,6 +171,9 @@ export class FilesStore {
         case 'change': {
           if (type === 'add_file') {
             this.#size++;
+            logger.debug(`[WATCHER] Adding new file: ${sanitizedPath} (total files: ${this.#size})`);
+          } else {
+            logger.debug(`[WATCHER] File changed: ${sanitizedPath}`);
           }
 
           let content = '';
@@ -164,6 +188,9 @@ export class FilesStore {
 
           if (!isBinary) {
             content = this.#decodeFileContent(buffer);
+            logger.trace(`[WATCHER] Decoded text file content (${content.length} bytes)`);
+          } else {
+            logger.trace(`[WATCHER] Binary file detected: ${sanitizedPath}`);
           }
 
           this.files.setKey(sanitizedPath, { type: 'file', content, isBinary });
@@ -172,10 +199,12 @@ export class FilesStore {
         }
         case 'remove_file': {
           this.#size--;
+          logger.debug(`[WATCHER] Removing file: ${sanitizedPath} (total files: ${this.#size})`);
           this.files.setKey(sanitizedPath, undefined);
           break;
         }
         case 'update_directory': {
+          logger.trace(`[WATCHER] Directory update event (ignored): ${sanitizedPath}`);
           // we don't care about these events
           break;
         }
@@ -191,7 +220,7 @@ export class FilesStore {
     try {
       return utf8TextDecoder.decode(buffer);
     } catch (error) {
-      console.log(error);
+      logger.error('[DECODE] Failed to decode file content as UTF-8:', error);
       return '';
     }
   }

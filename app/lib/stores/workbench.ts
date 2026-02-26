@@ -48,6 +48,8 @@ export class WorkbenchStore {
   reloadMode: WritableAtom<boolean> = atom(false);
 
   constructor() {
+    logger.trace('[INIT] WorkbenchStore initialized');
+
     if (import.meta.hot) {
       import.meta.hot.data.artifacts = this.artifacts;
       import.meta.hot.data.unsavedFiles = this.unsavedFiles;
@@ -101,12 +103,15 @@ export class WorkbenchStore {
   }
 
   setDocuments(files: FileMap) {
+    logger.debug(`[DOCUMENTS] Setting documents from file map`);
     this.#editorStore.setDocuments(files);
 
     if (this.#filesStore.filesCount > 0 && this.currentDocument.get() === undefined) {
+      logger.debug('[DOCUMENTS] No document selected, finding first file...');
       // we find the first file and select it
       for (const [filePath, dirent] of Object.entries(files)) {
         if (dirent?.type === 'file') {
+          logger.info(`[DOCUMENTS] Auto-selecting first file: ${filePath}`);
           this.setSelectedFile(filePath);
           break;
         }
@@ -115,6 +120,7 @@ export class WorkbenchStore {
   }
 
   setShowWorkbench(show: boolean) {
+    logger.debug(`[WORKBENCH] Setting workbench visibility: ${show}`);
     this.showWorkbench.set(show);
   }
 
@@ -122,8 +128,11 @@ export class WorkbenchStore {
     const filePath = this.currentDocument.get()?.filePath;
 
     if (!filePath) {
+      logger.debug('[DOCUMENT] No current document to update content');
       return;
     }
+
+    logger.debug(`[DOCUMENT] Updating content for: ${filePath}`);
 
     const originalContent = this.#filesStore.getFile(filePath)?.content;
     const unsavedChanges = originalContent !== undefined && originalContent !== newContent;
@@ -142,8 +151,10 @@ export class WorkbenchStore {
       const newUnsavedFiles = new Set(previousUnsavedFiles);
 
       if (unsavedChanges) {
+        logger.debug(`[DOCUMENT] Marking file as unsaved: ${filePath}`);
         newUnsavedFiles.add(currentDocument.filePath);
       } else {
+        logger.debug(`[DOCUMENT] Marking file as saved: ${filePath}`);
         newUnsavedFiles.delete(currentDocument.filePath);
       }
 
@@ -164,14 +175,17 @@ export class WorkbenchStore {
   }
 
   setSelectedFile(filePath: string | undefined) {
+    logger.debug(`[EDITOR] Selecting file: ${filePath ?? 'none'}`);
     this.#editorStore.setSelectedFile(filePath);
   }
 
   async saveFile(filePath: string) {
+    logger.info(`[SAVE] Saving file: ${filePath}`);
     const documents = this.#editorStore.documents.get();
     const document = documents[filePath];
 
     if (document === undefined) {
+      logger.warn(`[SAVE] Document not found: ${filePath}`);
       return;
     }
 
@@ -181,15 +195,18 @@ export class WorkbenchStore {
     newUnsavedFiles.delete(filePath);
 
     this.unsavedFiles.set(newUnsavedFiles);
+    logger.info(`[SAVE] File saved successfully: ${filePath}`);
   }
 
   async saveCurrentDocument() {
     const currentDocument = this.currentDocument.get();
 
     if (currentDocument === undefined) {
+      logger.debug('[SAVE] No current document to save');
       return;
     }
 
+    logger.debug(`[SAVE] Saving current document: ${currentDocument.filePath}`);
     await this.saveFile(currentDocument.filePath);
   }
 
@@ -211,9 +228,14 @@ export class WorkbenchStore {
   }
 
   async saveAllFiles() {
-    for (const filePath of this.unsavedFiles.get()) {
+    const unsavedFiles = this.unsavedFiles.get();
+    logger.info(`[SAVE] Saving all ${unsavedFiles.size} unsaved files`);
+
+    for (const filePath of unsavedFiles) {
       await this.saveFile(filePath);
     }
+
+    logger.info('[SAVE] All files saved');
   }
 
   getFileModifcations() {
@@ -232,8 +254,11 @@ export class WorkbenchStore {
     const artifact = this.#getArtifact(messageId);
 
     if (artifact) {
+      logger.debug(`[ARTIFACT] Artifact already exists: ${messageId}`);
       return;
     }
+
+    logger.info(`[ARTIFACT] Adding new artifact - ID: ${messageId}, Title: ${title}`);
 
     if (!this.artifactIdList.includes(messageId)) {
       this.artifactIdList.push(messageId);
@@ -251,9 +276,11 @@ export class WorkbenchStore {
     const artifact = this.#getArtifact(messageId);
 
     if (!artifact) {
+      logger.warn(`[ARTIFACT] Cannot update, artifact not found: ${messageId}`);
       return;
     }
 
+    logger.debug(`[ARTIFACT] Updating artifact ${messageId}:`, state);
     this.artifacts.setKey(messageId, { ...artifact, ...state });
   }
 
@@ -266,6 +293,7 @@ export class WorkbenchStore {
       unreachable('Artifact not found');
     }
 
+    logger.debug(`[ACTION] Adding action to artifact ${messageId}`);
     artifact.runner.addAction(data);
   }
 
@@ -284,13 +312,13 @@ export class WorkbenchStore {
      */
     if (this.reloadMode.get() && data.action.type === 'shell') {
       if (!this.#isEssentialShellCommand(data.action.content)) {
-        logger.debug('Reload mode: skipping non-essential shell command:', data.action.content);
+        logger.info(`[RELOAD] Skipping non-essential shell command: ${data.action.content}`);
         artifact.runner.skipAction(data);
 
         return;
       }
 
-      logger.debug('Reload mode: running essential shell command:', data.action.content);
+      logger.info(`[RELOAD] Running essential shell command: ${data.action.content}`);
     }
 
     artifact.runner.runAction(data);

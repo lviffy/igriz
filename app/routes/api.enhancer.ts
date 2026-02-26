@@ -18,6 +18,8 @@ async function enhancerAction({ context, request }: ActionFunctionArgs) {
     model?: string;
   }>();
 
+  logger.debug('[ENHANCER] Processing prompt enhancement');
+
   try {
     const result = await streamTextWithFallback(
       [
@@ -56,6 +58,8 @@ async function enhancerAction({ context, request }: ActionFunctionArgs) {
 
     const transformedStream = result.toDataStream().pipeThrough(transformStream);
 
+    logger.info('[ENHANCER] Successfully started streaming enhanced prompt');
+
     return new Response(transformedStream, {
       status: 200,
       headers: {
@@ -63,7 +67,7 @@ async function enhancerAction({ context, request }: ActionFunctionArgs) {
       },
     });
   } catch (error) {
-    console.log(error);
+    logger.error('[ENHANCER] Enhancement error:', error);
 
     throw new Response(null, {
       status: 500,
