@@ -1,4 +1,4 @@
-import { type ActionFunctionArgs, json } from '@remix-run/cloudflare';
+import { type ActionFunctionArgs, json } from '@remix-run/node';
 
 /**
  * Validates a GitHub personal access token and returns user info.

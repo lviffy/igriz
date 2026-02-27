@@ -1,4 +1,4 @@
-import { json } from '@remix-run/cloudflare';
+import { json } from '@remix-run/node';
 
 export function loader() {
   return json({ error: 'Not Found' }, { status: 404 });

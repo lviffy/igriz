@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { json, type MetaFunction } from '@remix-run/cloudflare';
+import { json, type MetaFunction } from '@remix-run/node';
 import { useLoaderData } from '@remix-run/react';
 import { ClientOnly } from 'remix-utils/client-only';
 import { BaseChat } from '~/components/chat/BaseChat';

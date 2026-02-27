@@ -1,16 +1,15 @@
 import { type ActionFunctionArgs } from '@remix-run/node';
+import { MAX_RESPONSE_SEGMENTS, MAX_TOKENS } from '~/lib/.server/llm/constants';
+import { CONTINUE_PROMPT } from '~/lib/.server/llm/prompts';
+import { streamTextWithFallback, type Messages, type StreamingOptions } from '~/lib/.server/llm/stream-text';
+import SwitchableStream from '~/lib/.server/llm/switchable-stream';
+import type { LLMProvider } from '~/lib/.server/llm/model';
 
-export async function action(args: ActionFunctionArgs) {
-  const { chatAction } = await import('~/lib/.server/actions/chat');
-  return chatAction(args);
-}
-
-async function chatAction({ context, request }: ActionFunctionArgs) {
-  const { messages, provider, model, walletPrivateKey } = await request.json<{
+export async function chatAction({ context, request }: ActionFunctionArgs) {
+  const { messages, provider, model } = await request.json<{
     messages: Messages;
     provider?: LLMProvider;
     model?: string;
-    walletPrivateKey?: string;
   }>();
 
   const selectedProvider = provider || 'groq';
@@ -81,13 +80,13 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
         messages.push({ role: 'assistant', content });
         messages.push({ role: 'user', content: CONTINUE_PROMPT });
 
-        const result = await streamTextWithFallback(messages, context.cloudflare.env, options, selectedProvider, selectedModel, undefined, walletPrivateKey);
+        const result = await streamTextWithFallback(messages, process.env as unknown as Env, options, selectedProvider, selectedModel);
 
         return stream.switchSource(result.toDataStream(dataStreamOptions));
       },
     };
 
-    const result = await streamTextWithFallback(messages, context.cloudflare.env, options, selectedProvider, selectedModel, undefined, walletPrivateKey);
+    const result = await streamTextWithFallback(messages, process.env as unknown as Env, options, selectedProvider, selectedModel);
 
     stream.switchSource(result.toDataStream(dataStreamOptions));
 
