@@ -10,10 +10,11 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 async function chatAction({ context, request }: ActionFunctionArgs) {
-  const { messages, provider, model } = await request.json<{
+  const { messages, provider, model, walletPrivateKey } = await request.json<{
     messages: Messages;
     provider?: LLMProvider;
     model?: string;
+    walletPrivateKey?: string;
   }>();
 
   const selectedProvider = provider || 'groq';
@@ -84,13 +85,13 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
         messages.push({ role: 'assistant', content });
         messages.push({ role: 'user', content: CONTINUE_PROMPT });
 
-        const result = await streamTextWithFallback(messages, context.cloudflare.env, options, selectedProvider, selectedModel);
+        const result = await streamTextWithFallback(messages, context.cloudflare.env, options, selectedProvider, selectedModel, undefined, walletPrivateKey);
 
         return stream.switchSource(result.toDataStream(dataStreamOptions));
       },
     };
 
-    const result = await streamTextWithFallback(messages, context.cloudflare.env, options, selectedProvider, selectedModel);
+    const result = await streamTextWithFallback(messages, context.cloudflare.env, options, selectedProvider, selectedModel, undefined, walletPrivateKey);
 
     stream.switchSource(result.toDataStream(dataStreamOptions));
 

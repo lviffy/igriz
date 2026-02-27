@@ -1,75 +1,40 @@
 import { atom } from 'nanostores';
 
 export interface WalletState {
-  connected: boolean;
-  address: string | null;
-  shortAddress: string | null;
+  privateKey: string | null;
+  hasKey: boolean;
 }
 
 export const walletStore = atom<WalletState>({
-  connected: false,
-  address: null,
-  shortAddress: null,
+  privateKey: null,
+  hasKey: false,
 });
 
-function shortenAddress(address: string): string {
-  return `${address.slice(0, 6)}...${address.slice(-4)}`;
-}
+/**
+ * Set the user's private key. Stored in memory only — never persisted to disk.
+ * Cleared on page refresh.
+ */
+export function setPrivateKey(key: string): void {
+  const trimmed = key.trim();
 
-export async function connectWallet(): Promise<void> {
-  if (typeof window === 'undefined') {
+  if (!trimmed) {
+    clearPrivateKey();
     return;
   }
 
-  const pelagus = (window as any).pelagus;
-
-  if (!pelagus) {
-    throw new Error('Pelagus wallet not found. Please install the Pelagus browser extension from https://pelaguswallet.io');
-  }
-
-  const accounts = await pelagus.request({ method: 'quai_requestAccounts' });
-
-  if (accounts && accounts.length > 0) {
-    const address = accounts[0];
-
-    walletStore.set({
-      connected: true,
-      address,
-      shortAddress: shortenAddress(address),
-    });
-  }
-}
-
-export async function disconnectWallet(): Promise<void> {
   walletStore.set({
-    connected: false,
-    address: null,
-    shortAddress: null,
+    privateKey: trimmed,
+    hasKey: true,
   });
 }
 
-/**
- * Initialize wallet event listeners for account changes.
- * Call this once on app startup (client-side only).
- */
-export function initWalletListeners(): void {
-  if (typeof window === 'undefined') {
-    return;
-  }
+export function clearPrivateKey(): void {
+  walletStore.set({
+    privateKey: null,
+    hasKey: false,
+  });
+}
 
-  const pelagus = (window as any).pelagus;
-
-  if (pelagus && typeof pelagus.on === 'function') {
-    pelagus.on('accountsChanged', (accounts: string[]) => {
-      if (accounts.length === 0) {
-        disconnectWallet();
-      } else {
-        walletStore.set({
-          connected: true,
-          address: accounts[0],
-          shortAddress: shortenAddress(accounts[0]),
-        });
-      }
-    });
-  }
+export function getPrivateKey(): string | null {
+  return walletStore.get().privateKey;
 }

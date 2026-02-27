@@ -9,6 +9,7 @@ import { useChatHistory } from '~/lib/persistence';
 import { chatStore } from '~/lib/stores/chat';
 import { workbenchStore } from '~/lib/stores/workbench';
 import { selectedProviderStore, selectedModelStore } from '~/lib/stores/provider';
+import { walletStore } from '~/lib/stores/wallet';
 import { fileModificationsToHTML } from '~/utils/diff';
 import { cubicEasingFn } from '~/utils/easings';
 import { createScopedLogger, renderLogger } from '~/utils/logger';
@@ -77,6 +78,7 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, initialPro
   const { showChat } = useStore(chatStore);
   const provider = useStore(selectedProviderStore);
   const model = useStore(selectedModelStore);
+  const wallet = useStore(walletStore);
 
   const [animationScope, animate] = useAnimate();
 
@@ -122,6 +124,7 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory, initialPro
     body: {
       provider,
       model,
+      walletPrivateKey: wallet.privateKey || undefined,
     },
     onResponse: async (response) => {
       // intercept non-OK responses before the SDK turns them into a generic error

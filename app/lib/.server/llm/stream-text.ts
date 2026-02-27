@@ -32,8 +32,9 @@ export function streamText(
   provider: LLMProvider = 'groq',
   model?: string,
   apiKey?: string,
+  walletPrivateKey?: string,
 ) {
-  const systemPrompt = getSystemPrompt() + '\n\n' + getBlockchainSystemPrompt();
+  const systemPrompt = getSystemPrompt() + '\n\n' + getBlockchainSystemPrompt(walletPrivateKey);
   const key = apiKey || getAPIKey(cloudflareEnv, provider);
 
   return _streamText({
@@ -80,6 +81,8 @@ export async function streamTextWithFallback(
   options?: StreamingOptions,
   provider: LLMProvider = 'groq',
   model?: string,
+  apiKey?: string,
+  walletPrivateKey?: string,
 ) {
   const keys = getAPIKeys(cloudflareEnv, provider);
   let lastError: unknown;
@@ -88,7 +91,7 @@ export async function streamTextWithFallback(
     try {
       console.log(`[LLM] Attempting ${provider} with API key #${i + 1}`);
 
-      const result = await streamText(messages, cloudflareEnv, options, provider, model, keys[i]);
+      const result = await streamText(messages, cloudflareEnv, options, provider, model, keys[i], walletPrivateKey);
 
       return result;
     } catch (error) {

@@ -315,6 +315,7 @@ export const CONTINUE_PROMPT = stripIndents`
 `;
 
 export const getBlockchainSystemPrompt = (
+  quaiPrivateKey?: string,
   quaiRpcUrl: string = 'https://orchard.rpc.quai.network',
 ) => `
 <blockchain_dapp_capabilities>
@@ -326,7 +327,7 @@ export const getBlockchainSystemPrompt = (
     - Chain ID: 15000
     - Currency: QUAI
     - Explorer: https://orchard.quaiscan.io/
-    - The user will connect their Pelagus wallet in the browser. Contract deployment and all write transactions happen through the connected wallet — no private key is needed.
+    ${quaiPrivateKey ? `- The user's Quai wallet private key for contract deployment is available and will be used in the deploy script's .env file.` : '- No Quai wallet private key has been configured. Ask the user to click "Add Wallet Key" in the top navigation bar to provide their private key for contract deployment.'}
   </quai_network_configuration>
 
   <critical_environment_constraints>
@@ -347,6 +348,7 @@ export const getBlockchainSystemPrompt = (
         Dependencies:
           - "quais": "^1.0.0-alpha.52"  (Quai SDK — for deployment AND frontend)
           - "solc": "0.8.20"            (Solidity compiler — MUST match pragma version)
+          - "dotenv": "^16.6.1"         (environment variables)
           - "@openzeppelin/contracts": "^5.3.0"  (ONLY if using standard token/access patterns)
           - Frontend deps: "react", "react-dom" etc.
         DevDependencies:
@@ -356,11 +358,10 @@ export const getBlockchainSystemPrompt = (
         CRITICAL: Do NOT include "hardhat" in dependencies — it does NOT work in this environment.
         CRITICAL: Do NOT include "ethers" — use "quais" instead.
 
-      Step 2: Create a .env file in the project root with network configuration:
+      Step 2: Create a .env file in the project root with deployment credentials:
         RPC_URL=${quaiRpcUrl}
+        PRIVATE_KEY=${quaiPrivateKey || 'YOUR_PRIVATE_KEY_HERE'}
         CHAIN_ID=15000
-
-        NOTE: No PRIVATE_KEY is needed — deployment happens through the user's connected Pelagus wallet in the browser.
 
       Step 3: Create Solidity smart contract(s) in the contracts/ directory.
         - Use pragma solidity ^0.8.20; (MUST match the solc package version)
@@ -470,144 +471,164 @@ export const getBlockchainSystemPrompt = (
 
         console.log('Compilation complete!');
 
-      Step 5: Create a compiled contract info placeholder file at src/contracts/compiledContract.json.
+      Step 5: Create a PLACEHOLDER deployment info file at src/contracts/deployedContract.json.
         This file MUST be created as a <boltAction type="file"> so the frontend can always import it.
-        The compile script will overwrite it with real data after compilation.
+        The deploy script will overwrite it with real data after deployment.
 
         {
-          "contractName": "",
+          "address": "",
           "abi": [],
-          "bytecode": "",
-          "compiled": false
+          "chainId": 15000,
+          "rpcUrl": "${quaiRpcUrl}",
+          "deployed": false
         }
 
-      Step 6: The compile script (scripts/compile.cjs) MUST additionally save the compiled artifact to src/contracts/compiledContract.json so the frontend can import it for browser-based deployment.
-        Add this at the end of the compile script (after saving to artifacts/):
+      Step 6: Create the deployment script at scripts/deploy.cjs.
+        The deployment script MUST:
+        a) Read the compiled artifact JSON (ABI + bytecode) from the artifacts/ directory
+        b) Deploy using quais.ContractFactory with a valid dummy IPFS hash
+        c) Wait for deployment confirmation
+        d) Save the deployed contract address AND full ABI to src/contracts/deployedContract.json (overwriting the placeholder)
 
-        // Also save to src/contracts/ for frontend import
-        const firstContractName = Object.keys(output.contracts[Object.keys(output.contracts)[0]])[0];
-        const firstContract = output.contracts[Object.keys(output.contracts)[0]][firstContractName];
-        const frontendArtifact = {
-          contractName: firstContractName,
-          abi: firstContract.abi,
-          bytecode: '0x' + firstContract.evm.bytecode.object,
-          metadata: firstContract.metadata || null,
-          compiled: true,
-        };
-        const frontendDir = path.join(__dirname, '..', 'src', 'contracts');
-        if (!fs.existsSync(frontendDir)) {
-          fs.mkdirSync(frontendDir, { recursive: true });
+        CRITICAL DEPLOYMENT RULES FOR QUAI NETWORK:
+        - You MUST use quais.ContractFactory for deployment — do NOT use wallet.sendTransaction() because Quai's sharded architecture requires address-based routing and contract creation transactions have no "to" address, causing "Unable to determine address" errors.
+        - ContractFactory requires a 4th constructor argument: a 46-character IPFS hash string.
+        - Since we cannot use @quai/hardhat-deploy-metadata, generate the IPFS hash from the contract metadata using Node.js crypto:
+
+        Use this EXACT deployment script pattern:
+
+        const quais = require('quais');
+        const crypto = require('crypto');
+        const fs = require('fs');
+        const path = require('path');
+        require('dotenv').config();
+
+        // Replace <ContractName> with your actual contract name
+        const artifact = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'artifacts', '<ContractName>.json'), 'utf8'));
+
+        // Generate a valid IPFS CIDv0 hash from contract metadata
+        function generateIpfsHash(content) {
+          const data = typeof content === 'string' ? content : JSON.stringify(content);
+          const hash = crypto.createHash('sha256').update(data).digest();
+          // Multihash format: 0x12 = SHA-256, 0x20 = 32 bytes
+          const multihash = Buffer.concat([Buffer.from([0x12, 0x20]), hash]);
+          // Base58 encoding
+          const ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+          let num = BigInt('0x' + multihash.toString('hex'));
+          let encoded = '';
+          while (num > 0n) {
+            encoded = ALPHABET[Number(num % 58n)] + encoded;
+            num = num / 58n;
+          }
+          for (const byte of multihash) {
+            if (byte === 0) encoded = '1' + encoded;
+            else break;
+          }
+          return encoded;
         }
-        fs.writeFileSync(
-          path.join(frontendDir, 'compiledContract.json'),
-          JSON.stringify(frontendArtifact, null, 2)
-        );
-        console.log('Frontend artifact saved to src/contracts/compiledContract.json');
+
+        async function deploy() {
+          // Check if contract is already deployed (skip re-deployment to save gas)
+          const deployedContractPath = path.join(__dirname, '..', 'src', 'contracts', 'deployedContract.json');
+          if (fs.existsSync(deployedContractPath)) {
+            try {
+              const existing = JSON.parse(fs.readFileSync(deployedContractPath, 'utf8'));
+              if (existing.deployed === true && existing.address && existing.address !== '') {
+                console.log('Contract already deployed at:', existing.address);
+                console.log('View contract on explorer: https://orchard.quaiscan.io/address/' + existing.address);
+                console.log('Skipping deployment. Delete src/contracts/deployedContract.json to force re-deploy.');
+                process.exit(0);
+              }
+            } catch (e) {
+              // If file is invalid JSON, proceed with deployment
+            }
+          }
+
+          console.log('Connecting to Quai Network...');
+          const provider = new quais.JsonRpcProvider(process.env.RPC_URL, undefined, { usePathing: true });
+          const wallet = new quais.Wallet(process.env.PRIVATE_KEY, provider);
+          console.log('Deploying from address:', wallet.address);
+
+          // Generate IPFS hash from contract metadata or bytecode
+          const metadataContent = artifact.metadata || JSON.stringify({ abi: artifact.abi, contractName: artifact.contractName });
+          const ipfsHash = generateIpfsHash(metadataContent);
+          console.log('Generated IPFS hash:', ipfsHash);
+
+          const factory = new quais.ContractFactory(artifact.abi, artifact.bytecode, wallet, ipfsHash);
+
+          console.log('Deploying contract...');
+          const contract = await factory.deploy(/* constructor arguments if any */);
+          const txHash = contract.deploymentTransaction().hash;
+          console.log('Transaction broadcasted:', txHash);
+          console.log('View transaction on explorer: https://orchard.quaiscan.io/tx/' + txHash);
+
+          await contract.waitForDeployment();
+          const contractAddress = await contract.getAddress();
+          console.log('Contract deployed to:', contractAddress);
+          console.log('View contract on explorer: https://orchard.quaiscan.io/address/' + contractAddress);
+
+          // Save deployment info for frontend integration (overwrites placeholder)
+          const deploymentInfo = {
+            address: contractAddress,
+            abi: artifact.abi,
+            chainId: Number(process.env.CHAIN_ID),
+            rpcUrl: process.env.RPC_URL,
+            deployed: true,
+          };
+
+          const outputDir = path.join(__dirname, '..', 'src', 'contracts');
+          if (!fs.existsSync(outputDir)) {
+            fs.mkdirSync(outputDir, { recursive: true });
+          }
+          fs.writeFileSync(
+            path.join(outputDir, 'deployedContract.json'),
+            JSON.stringify(deploymentInfo, null, 2)
+          );
+          console.log('Deployment info saved to src/contracts/deployedContract.json');
+        }
+
+        deploy()
+          .then(() => process.exit(0))
+          .catch((error) => {
+            console.error('Deployment failed:', error);
+            process.exit(1);
+          });
 
       Step 7: Run these shell commands IN THIS EXACT ORDER (each as a SEPARATE boltAction type="shell"):
         a. npm install
         b. node scripts/compile.cjs
+        c. node scripts/deploy.cjs
 
       CRITICAL: Each shell command MUST be its own separate <boltAction type="shell"> tag. Do NOT chain them with && in a single action.
-      NOTE: There is NO deploy shell command — deployment happens from the frontend via the user's browser wallet.
 
-      SMART SKIP BEHAVIOR: The compile script includes automatic skip logic:
+      SMART SKIP BEHAVIOR: The compile and deploy scripts include automatic skip logic:
         - compile.cjs checks if artifacts/ already contains compiled JSON files. If so, it skips recompilation.
-        - This means when reopening a previously built project, the script detects existing results and exits early.
+        - deploy.cjs checks if src/contracts/deployedContract.json has "deployed": true with a valid address. If so, it skips re-deployment to save gas.
+        - This means when reopening a previously built project, both scripts detect existing results and exit early — no wasted gas.
         - To force recompilation: delete the artifacts/ folder.
+        - To force re-deployment: delete src/contracts/deployedContract.json or set "deployed" to false in it.
 
-      After Step 7 completes, the contracts are compiled. The file src/contracts/compiledContract.json contains the ABI and bytecode for the frontend to use.
+      After Step 7 completes, the contract is compiled and deployed. The file src/contracts/deployedContract.json contains the real deployment data.
 
     PHASE 2 — Frontend Development & Blockchain Integration (ONLY after Phase 1 shell commands have been defined):
 
       Step 8: Create frontend application files (React + Vite recommended):
         - Create a blockchain service module (e.g., src/utils/blockchain.js) that:
-          a) Imports the compiled contract artifact from src/contracts/compiledContract.json
-          b) Provides functions to connect the Pelagus wallet (Quai's browser wallet)
-          c) Provides a deployContract() function that deploys using quais.ContractFactory through the connected wallet
-          d) After deployment, stores the contract address and provides contract interaction functions
-          e) Creates read-only provider and contract instances for data fetching (after deployment)
-          f) Exports clean functions for each contract interaction
+          a) Imports deployment info from src/contracts/deployedContract.json
+          b) Checks if the contract is actually deployed (deploymentInfo.deployed === true)
+          c) Creates read-only provider and contract instances for data fetching
+          d) Provides functions to connect the Pelagus wallet (Quai's browser wallet) for write operations
+          e) Exports clean functions for each contract interaction
+          f) Gracefully handles the case where the contract is not yet deployed
 
         Frontend blockchain integration pattern using quais:
 
         // src/utils/blockchain.js
-        import compiledContract from '../contracts/compiledContract.json';
+        import deploymentInfo from '../contracts/deployedContract.json';
         import { quais } from 'quais';
 
-        const RPC_URL = 'https://orchard.rpc.quai.network';
-        const CHAIN_ID = 15000;
-        let deployedAddress = localStorage.getItem('deployedContractAddress') || '';
-        let contractAbi = compiledContract.abi;
-
-        export function isContractCompiled() {
-          return compiledContract.compiled === true && compiledContract.bytecode !== '';
-        }
-
         export function isContractDeployed() {
-          return deployedAddress !== '';
-        }
-
-        export function getDeployedAddress() {
-          return deployedAddress;
-        }
-
-        // Connect Pelagus wallet
-        export async function connectWallet() {
-          if (typeof window.pelagus === 'undefined') {
-            throw new Error('Pelagus wallet not found. Please install the Pelagus browser extension.');
-          }
-          await window.pelagus.request({ method: 'quai_requestAccounts' });
-          const provider = new quais.BrowserProvider(window.pelagus);
-          const signer = await provider.getSigner();
-          return { provider, signer };
-        }
-
-        // Generate IPFS hash for ContractFactory (required by Quai Network)
-        function generateIpfsHash(content) {
-          const data = typeof content === 'string' ? content : JSON.stringify(content);
-          const encoder = new TextEncoder();
-          const encoded = encoder.encode(data);
-          // Simple deterministic hash — use contract bytecode prefix as a seed
-          let hash = 0;
-          for (let i = 0; i < encoded.length; i++) {
-            hash = ((hash << 5) - hash + encoded[i]) | 0;
-          }
-          // Generate a deterministic 46-char base58 string
-          const ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
-          let result = 'Qm';
-          const seed = Math.abs(hash);
-          for (let i = 0; i < 44; i++) {
-            result += ALPHABET[(seed * (i + 1) * 7 + i * 13) % ALPHABET.length];
-          }
-          return result;
-        }
-
-        // Deploy contract through connected wallet (no private key needed)
-        export async function deployContract(...constructorArgs) {
-          if (!isContractCompiled()) {
-            throw new Error('Contract is not compiled yet. Run the compile step first.');
-          }
-
-          const { signer } = await connectWallet();
-          const metadataContent = compiledContract.metadata || JSON.stringify({ abi: contractAbi, contractName: compiledContract.contractName });
-          const ipfsHash = generateIpfsHash(metadataContent);
-
-          const factory = new quais.ContractFactory(contractAbi, compiledContract.bytecode, signer, ipfsHash);
-
-          const contract = await factory.deploy(...constructorArgs);
-          const txHash = contract.deploymentTransaction().hash;
-          console.log('Transaction broadcasted:', txHash);
-
-          await contract.waitForDeployment();
-          const contractAddress = await contract.getAddress();
-          console.log('Contract deployed to:', contractAddress);
-
-          // Save address to localStorage for persistence
-          deployedAddress = contractAddress;
-          localStorage.setItem('deployedContractAddress', contractAddress);
-
-          return { contractAddress, txHash, contract };
+          return deploymentInfo.deployed === true && deploymentInfo.address !== '';
         }
 
         // Read-only provider (no wallet needed)
@@ -615,26 +636,33 @@ export const getBlockchainSystemPrompt = (
           if (!isContractDeployed()) {
             throw new Error('Contract is not deployed yet. Please deploy the contract first.');
           }
-          const provider = new quais.JsonRpcProvider(RPC_URL, undefined, { usePathing: true });
-          return new quais.Contract(deployedAddress, contractAbi, provider);
+          const provider = new quais.JsonRpcProvider(deploymentInfo.rpcUrl, undefined, { usePathing: true });
+          return new quais.Contract(deploymentInfo.address, deploymentInfo.abi, provider);
         }
 
-        // Get contract connected to wallet signer for write operations
-        export async function getSignedContract() {
+        // Connect Pelagus wallet for write operations
+        export async function connectWallet() {
           if (!isContractDeployed()) {
             throw new Error('Contract is not deployed yet.');
           }
-          const { signer } = await connectWallet();
-          return new quais.Contract(deployedAddress, contractAbi, signer);
+          if (typeof window.pelagus === 'undefined') {
+            throw new Error('Pelagus wallet not found. Please install the Pelagus browser extension.');
+          }
+          await window.pelagus.request({ method: 'quai_requestAccounts' });
+          const provider = new quais.BrowserProvider(window.pelagus);
+          const signer = await provider.getSigner();
+          const contract = new quais.Contract(deploymentInfo.address, deploymentInfo.abi, signer);
+          return { provider, signer, contract };
         }
 
+        // Export deployment info for UI
+        export { deploymentInfo };
+
       Step 9: Create React components that use the blockchain service module.
-        - Include a "Connect Wallet" button that calls connectWallet()
-        - Include a "Deploy Contract" button that calls deployContract() — this deploys through the user's wallet
-        - Show deployment status (pending, confirming, deployed) with proper UX
-        - After deployment, show the contract address and enable interaction
-        - Check isContractDeployed() to show contract interaction UI only after deployment
+        - Check isContractDeployed() before making any contract calls
+        - Show a message like "Contract not deployed yet" if deployment failed
         - Show contract data using read-only provider when deployed
+        - Include a "Connect Wallet" button for write operations
         - Handle transaction states (pending, confirmed, failed) with proper UX
         - Display transaction hashes with links to the Quai explorer: https://orchard.quaiscan.io/tx/{hash}
         - Display contract addresses with links to the Quai explorer: https://orchard.quaiscan.io/address/{address}
@@ -654,12 +682,11 @@ export const getBlockchainSystemPrompt = (
         npm run dev
 
     CRITICAL ORDERING RULES:
-      - ALL contract files, compile scripts, AND placeholder JSON files MUST be created BEFORE npm install
-      - The placeholder src/contracts/compiledContract.json MUST be created as a file action BEFORE the npm install shell command
-      - npm install → compile MUST run BEFORE any frontend source files (blockchain.js, App.jsx, etc.) are created
-      - The artifact action order MUST be: package.json → .env → contracts/*.sol → scripts/compile.cjs → src/contracts/compiledContract.json (placeholder) → (shell: npm install) → (shell: node scripts/compile.cjs) → frontend source files (vite.config.js, index.html, blockchain.js, App.jsx, etc.) → (shell: npm run dev)
+      - ALL contract files, compile scripts, deploy scripts, AND placeholder JSON files MUST be created BEFORE npm install
+      - The placeholder src/contracts/deployedContract.json MUST be created as a file action BEFORE the npm install shell command
+      - npm install → compile → deploy MUST run BEFORE any frontend source files (blockchain.js, App.jsx, etc.) are created
+      - The artifact action order MUST be: package.json → .env → contracts/*.sol → scripts/compile.cjs → scripts/deploy.cjs → src/contracts/deployedContract.json (placeholder) → (shell: npm install) → (shell: node scripts/compile.cjs) → (shell: node scripts/deploy.cjs) → frontend source files (vite.config.js, index.html, blockchain.js, App.jsx, etc.) → (shell: npm run dev)
       - Each shell command MUST be a separate <boltAction type="shell">. Do NOT chain with &&.
-      - There is NO deploy shell command — deployment happens in the browser through the user's Pelagus wallet.
   </dapp_development_workflow>
 
   <solidity_best_practices>
@@ -681,17 +708,15 @@ export const getBlockchainSystemPrompt = (
     - Quai Network is EVM-compatible for smart contracts — standard Solidity works
     - ALWAYS use the 'quais' npm package (Quai's SDK, a fork of ethers.js v6) instead of 'ethers' for ALL blockchain interactions
     - The quais.JsonRpcProvider constructor REQUIRES the { usePathing: true } option: new quais.JsonRpcProvider(rpcUrl, undefined, { usePathing: true })
-    - Contract deployment MUST use quais.ContractFactory with 4 arguments: (abi, bytecode, signer, ipfsHash) — the IPFS hash must be a valid 46-character string
-    - Deployment happens through the user's connected Pelagus wallet in the browser — never use private keys
+    - Contract deployment MUST use quais.ContractFactory with 4 arguments: (abi, bytecode, wallet, ipfsHash) — the IPFS hash must be a valid 46-character string
     - Do NOT use wallet.sendTransaction() for contract deployment — Quai's sharding requires address routing and contract creation has no "to" address
-    - Generate a deterministic IPFS hash for ContractFactory in the browser (see blockchain.js pattern above)
+    - Generate the IPFS hash from contract metadata using Node.js crypto (see deploy.cjs pattern above)
     - Quai uses a sharded architecture — Cyprus1 (chain ID 15000) is the shard used for deployment
     - The Pelagus wallet is the official browser wallet for Quai Network (equivalent to MetaMask for Ethereum)
     - For frontend wallet connection, use quais.BrowserProvider(window.pelagus) after requesting accounts
     - Solidity compilation MUST use evmVersion: 'london' for Quai compatibility
     - The Solidity compiler version should be 0.8.20
     - NEVER use Hardhat — it is incompatible with the WebContainer Node.js version
-    - NEVER ask for or use private keys — all signing happens through the Pelagus wallet
   </quai_network_specifics>
 
   <dapp_examples>
@@ -714,6 +739,7 @@ export const getBlockchainSystemPrompt = (
               "dependencies": {
                 "quais": "^1.0.0-alpha.52",
                 "solc": "0.8.20",
+                "dotenv": "^16.3.1",
                 "react": "^18.2.0",
                 "react-dom": "^18.2.0",
                 "@openzeppelin/contracts": "^5.3.0"
@@ -726,6 +752,7 @@ export const getBlockchainSystemPrompt = (
           </boltAction>
 
           <boltAction type="file" filePath=".env">
+            PRIVATE_KEY=\${quaiPrivateKey || 'YOUR_PRIVATE_KEY_HERE'}
             RPC_URL=https://orchard.rpc.quai.network
             CHAIN_ID=15000
           </boltAction>
@@ -737,15 +764,20 @@ export const getBlockchainSystemPrompt = (
           </boltAction>
 
           <boltAction type="file" filePath="scripts/compile.cjs">
-            // Compile script using solc (includes metadata output + saves to src/contracts/)...
+            // Compile script using solc...
           </boltAction>
 
-          <boltAction type="file" filePath="src/contracts/compiledContract.json">
+          <boltAction type="file" filePath="scripts/deploy.cjs">
+            // Deploy script using quais.ContractFactory with IPFS hash...
+          </boltAction>
+
+          <boltAction type="file" filePath="src/contracts/deployedContract.json">
             {
-              "contractName": "",
+              "address": "",
               "abi": [],
-              "bytecode": "",
-              "compiled": false
+              "chainId": 15000,
+              "rpcUrl": "https://orchard.rpc.quai.network",
+              "deployed": false
             }
           </boltAction>
 
@@ -757,6 +789,10 @@ export const getBlockchainSystemPrompt = (
             node scripts/compile.cjs
           </boltAction>
 
+          <boltAction type="shell">
+            node scripts/deploy.cjs
+          </boltAction>
+
           <boltAction type="file" filePath="index.html">
             // HTML entry point...
           </boltAction>
@@ -766,7 +802,7 @@ export const getBlockchainSystemPrompt = (
           </boltAction>
 
           <boltAction type="file" filePath="src/utils/blockchain.js">
-            // Blockchain service module with deployContract(), connectWallet(), etc...
+            // Blockchain service module with connectWallet(), getReadOnlyContract(), etc...
           </boltAction>
 
           <boltAction type="file" filePath="src/App.css">
@@ -774,7 +810,7 @@ export const getBlockchainSystemPrompt = (
           </boltAction>
 
           <boltAction type="file" filePath="src/App.jsx">
-            // React app with wallet connection, deploy button, and contract UI...
+            // React app with contract interaction UI...
           </boltAction>
 
           <boltAction type="file" filePath="src/main.jsx">
