@@ -1,0 +1,32 @@
+#!/bin/sh
+
+echo "🔍 Running pre-commit hook to check the code looks good... 🔍"
+
+# Load NVM if available (useful for managing Node.js versions)
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+
+# Ensure `bun` is available
+echo "Checking if bun is available..."
+if ! command -v bun >/dev/null 2>&1; then
+    echo "❌ bun not found! Please ensure bun is installed and available in PATH."
+    exit 1
+fi
+
+# Run typecheck
+echo "Running typecheck..."
+if ! bun typecheck; then
+    echo "❌ Type checking failed! Please review TypeScript types."
+    echo "Once you're done, don't forget to add your changes to the commit! 🚀"
+    exit 1
+fi
+
+# Run lint
+echo "Running lint..."
+if ! bun lint; then
+    echo "❌ Linting failed! Run 'bun lint:fix' to fix the easy issues."
+    echo "Once you're done, don't forget to add your beautification to the commit! 🤩"
+    exit 1
+fi
+
+echo "👍 All checks passed! Committing changes..."
