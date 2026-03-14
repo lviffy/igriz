@@ -420,8 +420,11 @@ export const ChatImpl = memo(
           });
 
           if (template !== 'blank') {
-            const temResp = await getTemplates(template, title).catch((e) => {
-              if (e.message.includes('rate limit')) {
+            const temResp = await getTemplates(template, title).catch((e: unknown) => {
+              const message =
+                e instanceof Error ? e.message : typeof e === 'string' ? e : JSON.stringify(e ?? 'Unknown error');
+
+              if (message.toLowerCase().includes('rate limit')) {
                 toast.warning('Rate limit exceeded. Skipping starter template\n Continuing with blank template');
               } else {
                 toast.warning('Failed to import starter template\n Continuing with blank template');
