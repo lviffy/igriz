@@ -167,12 +167,12 @@ export function createCommandsMessage(commands: ProjectCommands): Message | null
 
   if (commands.setupCommand) {
     commandString += `
-<boltAction type="shell">${commands.setupCommand}</boltAction>`;
+<igrizAction type="shell">${commands.setupCommand}</igrizAction>`;
   }
 
   if (commands.startCommand) {
     commandString += `
-<boltAction type="start">${commands.startCommand}</boltAction>
+<igrizAction type="start">${commands.startCommand}</igrizAction>
 `;
   }
 
@@ -180,17 +180,17 @@ export function createCommandsMessage(commands: ProjectCommands): Message | null
     role: 'assistant',
     content: `
 ${commands.followupMessage ? `\n\n${commands.followupMessage}` : ''}
-<boltArtifact id="project-setup" title="Project Setup">
+<igrizArtifact id="project-setup" title="Project Setup">
 ${commandString}
-</boltArtifact>`,
+</igrizArtifact>`,
     id: generateId(),
     createdAt: new Date(),
   };
 }
 
-export function escapeBoltArtifactTags(input: string) {
-  // Regular expression to match boltArtifact tags and their content
-  const regex = /(<boltArtifact[^>]*>)([\s\S]*?)(<\/boltArtifact>)/g;
+export function escapeigrizArtifactTags(input: string) {
+  // Regular expression to match igrizArtifact tags and their content
+  const regex = /(<igrizArtifact[^>]*>)([\s\S]*?)(<\/igrizArtifact>)/g;
 
   return input.replace(regex, (match, openTag, content, closeTag) => {
     // Escape the opening tag
@@ -204,9 +204,9 @@ export function escapeBoltArtifactTags(input: string) {
   });
 }
 
-export function escapeBoltAActionTags(input: string) {
-  // Regular expression to match boltArtifact tags and their content
-  const regex = /(<boltAction[^>]*>)([\s\S]*?)(<\/boltAction>)/g;
+export function escapeigrizAActionTags(input: string) {
+  // Regular expression to match igrizArtifact tags and their content
+  const regex = /(<igrizAction[^>]*>)([\s\S]*?)(<\/igrizAction>)/g;
 
   return input.replace(regex, (match, openTag, content, closeTag) => {
     // Escape the opening tag
@@ -220,8 +220,8 @@ export function escapeBoltAActionTags(input: string) {
   });
 }
 
-export function escapeBoltTags(input: string) {
-  return escapeBoltArtifactTags(escapeBoltAActionTags(input));
+export function escapeigrizTags(input: string) {
+  return escapeigrizArtifactTags(escapeigrizAActionTags(input));
 }
 
 // We have this seperate function to simplify the restore snapshot process in to one single artifact.
@@ -235,12 +235,12 @@ export function createCommandActionsString(commands: ProjectCommands): string {
 
   if (commands.setupCommand) {
     commandString += `
-<boltAction type="shell">${commands.setupCommand}</boltAction>`;
+<igrizAction type="shell">${commands.setupCommand}</igrizAction>`;
   }
 
   if (commands.startCommand) {
     commandString += `
-<boltAction type="start">${commands.startCommand}</boltAction>
+<igrizAction type="start">${commands.startCommand}</igrizAction>
 `;
   }
 

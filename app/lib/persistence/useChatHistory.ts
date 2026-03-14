@@ -130,15 +130,15 @@ export function useChatHistory() {
                   role: 'assistant',
 
                   // Combine followup message and the artifact with files and command actions
-                  content: `Bolt Restored your chat from a snapshot. You can revert this message to load the full chat history.
-                  <boltArtifact id="restored-project-setup" title="Restored Project & Setup" type="bundled">
+                  content: `igriz Restored your chat from a snapshot. You can revert this message to load the full chat history.
+                  <igrizArtifact id="restored-project-setup" title="Restored Project & Setup" type="bundled">
                   ${Object.entries(snapshot?.files || {})
                     .map(([key, value]) => {
                       if (value?.type === 'file') {
                         return `
-                      <boltAction type="file" filePath="${key}">
+                      <igrizAction type="file" filePath="${key}">
 ${value.content}
-                      </boltAction>
+                      </igrizAction>
                       `;
                       } else {
                         return ``;
@@ -146,7 +146,7 @@ ${value.content}
                     })
                     .join('\n')}
                   ${commandActionsString} 
-                  </boltArtifact>
+                  </igrizArtifact>
                   `, // Added commandActionsString, followupMessage, updated id and title
                   annotations: [
                     'no-store',

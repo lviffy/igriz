@@ -55,9 +55,9 @@ export function McpTools() {
           className="transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {!isInitialized ? (
-            <div className="i-svg-spinners:90-ring-with-bg text-bolt-elements-loader-progress text-xl animate-spin"></div>
+            <div className="i-svg-spinners:90-ring-with-bg text-igriz-elements-loader-progress text-xl animate-spin"></div>
           ) : (
-            <div className="i-bolt:mcp text-xl"></div>
+            <div className="i-igriz:mcp text-xl"></div>
           )}
         </IconButton>
       </div>
@@ -67,7 +67,7 @@ export function McpTools() {
           <Dialog className="max-w-4xl w-full p-6">
             <div className="space-y-4 max-h-[80vh] overflow-y-auto pr-2">
               <DialogTitle>
-                <div className="i-bolt:mcp text-xl"></div>
+                <div className="i-igriz:mcp text-xl"></div>
                 MCP tools
               </DialogTitle>
 
@@ -79,15 +79,15 @@ export function McpTools() {
                       disabled={isCheckingServers || serverEntries.length === 0}
                       className={classNames(
                         'px-3 py-1.5 rounded-lg text-sm',
-                        'bg-bolt-elements-background-depth-3 hover:bg-bolt-elements-background-depth-4',
-                        'text-bolt-elements-textPrimary',
+                        'bg-igriz-elements-background-depth-3 hover:bg-igriz-elements-background-depth-4',
+                        'text-igriz-elements-textPrimary',
                         'transition-all duration-200',
                         'flex items-center gap-2',
                         'disabled:opacity-50 disabled:cursor-not-allowed',
                       )}
                     >
                       {isCheckingServers ? (
-                        <div className="i-svg-spinners:90-ring-with-bg w-3 h-3 text-bolt-elements-loader-progress animate-spin" />
+                        <div className="i-svg-spinners:90-ring-with-bg w-3 h-3 text-igriz-elements-loader-progress animate-spin" />
                       ) : (
                         <div className="i-ph:arrow-counter-clockwise w-3 h-3" />
                       )}
@@ -103,14 +103,14 @@ export function McpTools() {
                       toggleServerExpanded={toggleServerExpanded}
                     />
                   ) : (
-                    <div className="py-4 text-center text-bolt-elements-textSecondary">
+                    <div className="py-4 text-center text-igriz-elements-textSecondary">
                       <p>No MCP servers configured</p>
                       <p className="text-xs mt-1">Configure servers in Settings → MCP Servers</p>
                     </div>
                   )}
                 </div>
 
-                <div>{error && <p className="mt-2 text-sm text-bolt-elements-icon-error">{error}</p>}</div>
+                <div>{error && <p className="mt-2 text-sm text-igriz-elements-icon-error">{error}</p>}</div>
               </div>
 
               <div className="flex justify-end gap-2 mt-6">

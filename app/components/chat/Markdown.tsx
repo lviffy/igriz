@@ -32,7 +32,7 @@ export const Markdown = memo(
         div: ({ className, children, node, ...props }) => {
           const dataProps = node?.properties as Record<string, unknown>;
 
-          if (className?.includes('__boltArtifact__')) {
+          if (className?.includes('__igrizArtifact__')) {
             const messageId = node?.properties.dataMessageId as string;
             const artifactId = node?.properties.dataArtifactId as string;
 
@@ -47,7 +47,7 @@ export const Markdown = memo(
             return <Artifact messageId={messageId} artifactId={artifactId} />;
           }
 
-          if (className?.includes('__boltSelectedElement__')) {
+          if (className?.includes('__igrizSelectedElement__')) {
             const messageId = node?.properties.dataMessageId as string;
             const elementDataAttr = node?.properties.dataElement as string;
 
@@ -67,27 +67,27 @@ export const Markdown = memo(
             }
 
             return (
-              <div className="bg-bolt-elements-background-depth-3 border border-bolt-elements-borderColor rounded-lg p-3 my-2">
+              <div className="bg-igriz-elements-background-depth-3 border border-igriz-elements-borderColor rounded-lg p-3 my-2">
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="text-xs font-mono bg-bolt-elements-background-depth-2 px-2 py-1 rounded text-bolt-elements-textTer">
+                  <span className="text-xs font-mono bg-igriz-elements-background-depth-2 px-2 py-1 rounded text-igriz-elements-textTer">
                     {elementData?.tagName}
                   </span>
                   {elementData?.className && (
-                    <span className="text-xs text-bolt-elements-textSecondary">.{elementData.className}</span>
+                    <span className="text-xs text-igriz-elements-textSecondary">.{elementData.className}</span>
                   )}
                 </div>
-                <code className="block text-sm !text-bolt-elements-textSecondary !bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor p-2 rounded">
+                <code className="block text-sm !text-igriz-elements-textSecondary !bg-igriz-elements-background-depth-2 border border-igriz-elements-borderColor p-2 rounded">
                   {elementData?.displayText}
                 </code>
               </div>
             );
           }
 
-          if (className?.includes('__boltThought__')) {
+          if (className?.includes('__igrizThought__')) {
             return <ThoughtBox title="Thought process">{children}</ThoughtBox>;
           }
 
-          if (className?.includes('__boltQuickAction__') || dataProps?.dataBoltQuickAction) {
+          if (className?.includes('__igrizQuickAction__') || dataProps?.dataigrizQuickAction) {
             return <div className="flex items-center gap-2 flex-wrap mt-3.5">{children}</div>;
           }
 
@@ -120,8 +120,8 @@ export const Markdown = memo(
           const dataProps = node?.properties as Record<string, unknown>;
 
           if (
-            dataProps?.class?.toString().includes('__boltQuickAction__') ||
-            dataProps?.dataBoltQuickAction === 'true'
+            dataProps?.class?.toString().includes('__igrizQuickAction__') ||
+            dataProps?.dataigrizQuickAction === 'true'
           ) {
             const type = dataProps['data-type'] || dataProps.dataType;
             const message = dataProps['data-message'] || dataProps.dataMessage;
@@ -140,7 +140,7 @@ export const Markdown = memo(
 
             return (
               <button
-                className="rounded-md justify-center px-3 py-1.5 text-xs bg-bolt-elements-item-backgroundAccent text-bolt-elements-item-contentAccent opacity-90 hover:opacity-100 flex items-center gap-2 cursor-pointer"
+                className="rounded-md justify-center px-3 py-1.5 text-xs bg-igriz-elements-item-backgroundAccent text-igriz-elements-item-contentAccent opacity-90 hover:opacity-100 flex items-center gap-2 cursor-pointer"
                 data-type={type}
                 data-message={message}
                 data-path={path}
@@ -216,23 +216,23 @@ export const Markdown = memo(
  *
  * @example
  * // Removes code fences around artifact
- * const input = "```xml\n<div class='__boltArtifact__'></div>\n```";
+ * const input = "```xml\n<div class='__igrizArtifact__'></div>\n```";
  * stripCodeFenceFromArtifact(input);
- * // Returns: "\n<div class='__boltArtifact__'></div>\n"
+ * // Returns: "\n<div class='__igrizArtifact__'></div>\n"
  *
  * @remarks
- * - Only removes code fences that directly wrap an artifact (marked with __boltArtifact__ class)
+ * - Only removes code fences that directly wrap an artifact (marked with __igrizArtifact__ class)
  * - Handles code fences with optional language specifications (e.g. ```xml, ```typescript)
  * - Preserves original content if no artifact is found
  * - Safely handles edge cases like empty input or artifacts at start/end of content
  */
 export const stripCodeFenceFromArtifact = (content: string) => {
-  if (!content || !content.includes('__boltArtifact__')) {
+  if (!content || !content.includes('__igrizArtifact__')) {
     return content;
   }
 
   const lines = content.split('\n');
-  const artifactLineIndex = lines.findIndex((line) => line.includes('__boltArtifact__'));
+  const artifactLineIndex = lines.findIndex((line) => line.includes('__igrizArtifact__'));
 
   // Return original content if artifact line not found
   if (artifactLineIndex === -1) {

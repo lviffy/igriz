@@ -812,7 +812,7 @@ class DebugLogger {
     try {
       if (typeof window !== 'undefined') {
         // Access stores if available
-        const workbenchStore = (window as any).__bolt_workbench_store;
+        const workbenchStore = (window as any).__igriz_workbench_store;
 
         if (workbenchStore) {
           const state = workbenchStore.get?.() || {};
@@ -858,7 +858,7 @@ class DebugLogger {
     try {
       // Try to get from localStorage or environment
       if (typeof window !== 'undefined') {
-        const stored = localStorage.getItem('bolt_current_model');
+        const stored = localStorage.getItem('igriz_current_model');
 
         if (stored) {
           return stored;
@@ -874,7 +874,7 @@ class DebugLogger {
   private _getCurrentProvider(): string {
     try {
       if (typeof window !== 'undefined') {
-        const stored = localStorage.getItem('bolt_current_provider');
+        const stored = localStorage.getItem('igriz_current_provider');
 
         if (stored) {
           return stored;
@@ -890,7 +890,7 @@ class DebugLogger {
   private _getProjectType(): string {
     try {
       if (typeof window !== 'undefined') {
-        const stored = localStorage.getItem('bolt_project_type');
+        const stored = localStorage.getItem('igriz_project_type');
 
         if (stored) {
           return stored;
@@ -941,7 +941,7 @@ class DebugLogger {
   private _getGitInfoFallback(): AppInfo['gitInfo'] {
     try {
       // Try to get from localStorage (could be set by the app)
-      const stored = localStorage.getItem('bolt_git_info');
+      const stored = localStorage.getItem('igriz_git_info');
 
       if (stored) {
         return JSON.parse(stored);
@@ -1018,7 +1018,7 @@ class DebugLogger {
 
     try {
       if (typeof window !== 'undefined') {
-        const workbenchStore = (window as any).__bolt_workbench_store;
+        const workbenchStore = (window as any).__igriz_workbench_store;
 
         if (workbenchStore) {
           const state = workbenchStore.get?.() || {};
@@ -1141,7 +1141,7 @@ export async function downloadDebugLog(filename?: string): Promise<void> {
 
     const link = document.createElement('a');
     link.href = url;
-    link.download = filename || `bolt-debug-${new Date().toISOString().split('T')[0]}.txt`;
+    link.download = filename || `igriz-debug-${new Date().toISOString().split('T')[0]}.txt`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -1157,7 +1157,7 @@ export async function downloadDebugLog(filename?: string): Promise<void> {
 // Create a human-readable summary of the debug data
 function createDebugSummary(data: DebugLogData): string {
   const summary = [
-    '=== BOLT DIY DEBUG LOG SUMMARY ===',
+    '=== igriz DIY DEBUG LOG SUMMARY ===',
     `Generated: ${new Date(data.timestamp).toLocaleString()}`,
     `Session ID: ${data.sessionId}`,
     '',

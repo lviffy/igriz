@@ -142,14 +142,14 @@ export function LockManager() {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Controls */}
-      <div className="flex items-center gap-1 px-2 py-1 border-b border-bolt-elements-borderColor">
+      <div className="flex items-center gap-1 px-2 py-1 border-b border-igriz-elements-borderColor">
         {/* Search Input */}
         <div className="relative flex-1">
-          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-bolt-elements-textTertiary i-ph:magnifying-glass text-xs pointer-events-none" />
+          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-igriz-elements-textTertiary i-ph:magnifying-glass text-xs pointer-events-none" />
           <input
             type="text"
             placeholder="Search..."
-            className="w-full text-xs pl-6 pr-2 py-0.5 h-6 bg-bolt-elements-background-depth-2 text-bolt-elements-textPrimary rounded border border-bolt-elements-borderColor focus:outline-none"
+            className="w-full text-xs pl-6 pr-2 py-0.5 h-6 bg-igriz-elements-background-depth-2 text-igriz-elements-textPrimary rounded border border-igriz-elements-borderColor focus:outline-none"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             style={{ minWidth: 0 }}
@@ -157,7 +157,7 @@ export function LockManager() {
         </div>
         {/* Filter Select */}
         <select
-          className="text-xs px-1 py-0.5 h-6 bg-bolt-elements-background-depth-2 text-bolt-elements-textPrimary rounded border border-bolt-elements-borderColor focus:outline-none"
+          className="text-xs px-1 py-0.5 h-6 bg-igriz-elements-background-depth-2 text-igriz-elements-textPrimary rounded border border-igriz-elements-borderColor focus:outline-none"
           value={filter}
           onChange={(e) => setFilter(e.target.value as any)}
         >
@@ -168,12 +168,12 @@ export function LockManager() {
       </div>
 
       {/* Header Row with Select All */}
-      <div className="flex items-center justify-between px-2 py-1 text-xs text-bolt-elements-textSecondary">
+      <div className="flex items-center justify-between px-2 py-1 text-xs text-igriz-elements-textSecondary">
         <div>
           <Checkbox
             checked={selectAllCheckedState}
             onCheckedChange={handleSelectAll}
-            className="w-3 h-3 rounded border-bolt-elements-borderColor mr-2"
+            className="w-3 h-3 rounded border-igriz-elements-borderColor mr-2"
             aria-label="Select all items"
             disabled={filteredAndSortedItems.length === 0} // Disable if no items to select
           />
@@ -181,7 +181,7 @@ export function LockManager() {
         </div>
         {selectedItems.size > 0 && (
           <button
-            className="ml-auto px-2 py-0.5 rounded bg-bolt-elements-button-secondary-background hover:bg-bolt-elements-button-secondary-backgroundHover text-bolt-elements-button-secondary-text text-xs flex items-center gap-1"
+            className="ml-auto px-2 py-0.5 rounded bg-igriz-elements-button-secondary-background hover:bg-igriz-elements-button-secondary-backgroundHover text-igriz-elements-button-secondary-text text-xs flex items-center gap-1"
             onClick={handleUnlockSelected}
             title="Unlock all selected items"
           >
@@ -194,7 +194,7 @@ export function LockManager() {
       {/* List of locked items */}
       <div className="flex-1 overflow-auto modern-scrollbar px-1 py-1">
         {filteredAndSortedItems.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-bolt-elements-textTertiary text-xs gap-2">
+          <div className="flex flex-col items-center justify-center h-full text-igriz-elements-textTertiary text-xs gap-2">
             <span className="i-ph:lock-open-duotone text-lg opacity-50" />
             <span>No locked items found</span>
           </div>
@@ -204,19 +204,19 @@ export function LockManager() {
               <li
                 key={item.path}
                 className={classNames(
-                  'text-bolt-elements-textTertiary flex items-center gap-2 px-2 py-1 rounded hover:bg-bolt-elements-background-depth-2 transition-colors group',
-                  selectedItems.has(item.path) ? 'bg-bolt-elements-background-depth-2' : '',
+                  'text-igriz-elements-textTertiary flex items-center gap-2 px-2 py-1 rounded hover:bg-igriz-elements-background-depth-2 transition-colors group',
+                  selectedItems.has(item.path) ? 'bg-igriz-elements-background-depth-2' : '',
                 )}
               >
                 <Checkbox
                   checked={selectedItems.has(item.path)}
                   onCheckedChange={() => handleSelectItem(item.path)}
-                  className="w-3 h-3 rounded border-bolt-elements-borderColor"
+                  className="w-3 h-3 rounded border-igriz-elements-borderColor"
                   aria-labelledby={`item-label-${item.path}`} // For accessibility
                 />
                 <span
                   className={classNames(
-                    'shrink-0 text-bolt-elements-textTertiary text-xs',
+                    'shrink-0 text-igriz-elements-textTertiary text-xs',
                     item.type === 'file' ? 'i-ph:file-text-duotone' : 'i-ph:folder-duotone',
                   )}
                 />
@@ -231,7 +231,7 @@ export function LockManager() {
                   )}
                 ></span>
                 <button
-                  className="flex items-center px-1 py-0.5 text-xs rounded bg-transparent hover:bg-bolt-elements-background-depth-3"
+                  className="flex items-center px-1 py-0.5 text-xs rounded bg-transparent hover:bg-igriz-elements-background-depth-3"
                   onClick={() => {
                     if (item.type === 'file') {
                       workbenchStore.unlockFile(item.path);
@@ -252,7 +252,7 @@ export function LockManager() {
       </div>
 
       {/* Footer */}
-      <div className="px-2 py-1 border-t border-bolt-elements-borderColor bg-bolt-elements-background-depth-2 text-xs text-bolt-elements-textTertiary flex justify-between items-center">
+      <div className="px-2 py-1 border-t border-igriz-elements-borderColor bg-igriz-elements-background-depth-2 text-xs text-igriz-elements-textTertiary flex justify-between items-center">
         <div>
           {filteredAndSortedItems.length} item(s) • {selectedItems.size} selected
         </div>

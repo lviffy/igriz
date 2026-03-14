@@ -336,7 +336,7 @@ const getInitialTabConfiguration = (): TabWindowConfig => {
   }
 
   try {
-    const saved = localStorage.getItem('bolt_tab_configuration');
+    const saved = localStorage.getItem('igriz_tab_configuration');
 
     if (!saved) {
       return defaultConfig;
@@ -369,7 +369,7 @@ export const resetTabConfiguration = () => {
   };
 
   tabConfigurationStore.set(defaultConfig);
-  localStorage.setItem('bolt_tab_configuration', JSON.stringify(defaultConfig));
+  localStorage.setItem('igriz_tab_configuration', JSON.stringify(defaultConfig));
 };
 
 // First, let's define the SettingsStore interface

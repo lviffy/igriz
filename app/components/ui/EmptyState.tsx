@@ -87,8 +87,8 @@ export function EmptyState({
     <div
       className={classNames(
         'flex flex-col items-center justify-center',
-        'text-bolt-elements-textSecondary dark:text-bolt-elements-textSecondary-dark',
-        'bg-bolt-elements-background-depth-2 dark:bg-bolt-elements-background-depth-3 rounded-lg',
+        'text-igriz-elements-textSecondary dark:text-igriz-elements-textSecondary-dark',
+        'bg-igriz-elements-background-depth-2 dark:bg-igriz-elements-background-depth-3 rounded-lg',
         styles.container,
         className,
       )}
@@ -96,7 +96,7 @@ export function EmptyState({
       {/* Icon */}
       <div
         className={classNames(
-          'rounded-full bg-bolt-elements-background-depth-3 dark:bg-bolt-elements-background-depth-4 flex items-center justify-center',
+          'rounded-full bg-igriz-elements-background-depth-3 dark:bg-igriz-elements-background-depth-4 flex items-center justify-center',
           styles.icon.container,
         )}
       >
@@ -104,7 +104,7 @@ export function EmptyState({
           className={classNames(
             icon,
             styles.icon.size,
-            'text-bolt-elements-textTertiary dark:text-bolt-elements-textTertiary-dark',
+            'text-igriz-elements-textTertiary dark:text-igriz-elements-textTertiary-dark',
           )}
         />
       </div>
@@ -116,7 +116,7 @@ export function EmptyState({
       {description && (
         <p
           className={classNames(
-            'text-bolt-elements-textTertiary dark:text-bolt-elements-textTertiary-dark text-center max-w-xs',
+            'text-igriz-elements-textTertiary dark:text-igriz-elements-textTertiary-dark text-center max-w-xs',
             styles.description,
           )}
         >

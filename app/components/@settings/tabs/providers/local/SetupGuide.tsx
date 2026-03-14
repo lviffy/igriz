@@ -32,14 +32,14 @@ function SetupGuide({ onBack }: { onBack: () => void }) {
           variant="ghost"
           size="sm"
           onClick={onBack}
-          className="bg-transparent hover:bg-transparent text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary transition-all duration-200 p-2"
+          className="bg-transparent hover:bg-transparent text-igriz-elements-textSecondary hover:text-igriz-elements-textPrimary transition-all duration-200 p-2"
           aria-label="Back to Dashboard"
         >
           <ArrowLeft className="w-4 h-4" />
         </Button>
         <div>
-          <h2 className="text-xl font-semibold text-bolt-elements-textPrimary">Local Provider Setup Guide</h2>
-          <p className="text-sm text-bolt-elements-textSecondary">
+          <h2 className="text-xl font-semibold text-igriz-elements-textPrimary">Local Provider Setup Guide</h2>
+          <p className="text-sm text-igriz-elements-textSecondary">
             Complete setup instructions for running AI models locally
           </p>
         </div>
@@ -53,46 +53,46 @@ function SetupGuide({ onBack }: { onBack: () => void }) {
               <Shield className="w-5 h-5 text-blue-500" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-bolt-elements-textPrimary">System Requirements</h3>
-              <p className="text-sm text-bolt-elements-textSecondary">Recommended hardware for optimal performance</p>
+              <h3 className="text-lg font-semibold text-igriz-elements-textPrimary">System Requirements</h3>
+              <p className="text-sm text-igriz-elements-textSecondary">Recommended hardware for optimal performance</p>
             </div>
           </div>
           <div className="grid md:grid-cols-3 gap-4 text-sm">
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <Cpu className="w-4 h-4 text-green-500" />
-                <span className="font-medium text-bolt-elements-textPrimary">CPU</span>
+                <span className="font-medium text-igriz-elements-textPrimary">CPU</span>
               </div>
-              <p className="text-bolt-elements-textSecondary">8+ cores, modern architecture</p>
+              <p className="text-igriz-elements-textSecondary">8+ cores, modern architecture</p>
             </div>
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <Database className="w-4 h-4 text-blue-500" />
-                <span className="font-medium text-bolt-elements-textPrimary">RAM</span>
+                <span className="font-medium text-igriz-elements-textPrimary">RAM</span>
               </div>
-              <p className="text-bolt-elements-textSecondary">16GB minimum, 32GB+ recommended</p>
+              <p className="text-igriz-elements-textSecondary">16GB minimum, 32GB+ recommended</p>
             </div>
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <Monitor className="w-4 h-4 text-purple-500" />
-                <span className="font-medium text-bolt-elements-textPrimary">GPU</span>
+                <span className="font-medium text-igriz-elements-textPrimary">GPU</span>
               </div>
-              <p className="text-bolt-elements-textSecondary">NVIDIA RTX 30xx+ or AMD RX 6000+</p>
+              <p className="text-igriz-elements-textSecondary">NVIDIA RTX 30xx+ or AMD RX 6000+</p>
             </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Ollama Setup Section */}
-      <Card className="bg-bolt-elements-background-depth-2 shadow-sm">
+      <Card className="bg-igriz-elements-background-depth-2 shadow-sm">
         <CardHeader className="pb-6">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500/20 to-purple-600/20 flex items-center justify-center ring-1 ring-purple-500/30">
               <Server className="w-6 h-6 text-purple-500" />
             </div>
             <div className="flex-1">
-              <h3 className="text-xl font-semibold text-bolt-elements-textPrimary">Ollama Setup</h3>
-              <p className="text-sm text-bolt-elements-textSecondary">
+              <h3 className="text-xl font-semibold text-igriz-elements-textPrimary">Ollama Setup</h3>
+              <p className="text-sm text-igriz-elements-textSecondary">
                 Most popular choice for running open-source models locally with desktop app
               </p>
             </div>
@@ -104,7 +104,7 @@ function SetupGuide({ onBack }: { onBack: () => void }) {
         <CardContent className="space-y-6">
           {/* Installation Options */}
           <div className="space-y-4">
-            <h4 className="font-medium text-bolt-elements-textPrimary flex items-center gap-2">
+            <h4 className="font-medium text-igriz-elements-textPrimary flex items-center gap-2">
               <Download className="w-4 h-4" />
               1. Choose Installation Method
             </h4>
@@ -115,14 +115,14 @@ function SetupGuide({ onBack }: { onBack: () => void }) {
                 <Monitor className="w-5 h-5 text-green-500" />
                 <h5 className="font-medium text-green-500">🆕 Desktop App (Recommended)</h5>
               </div>
-              <p className="text-sm text-bolt-elements-textSecondary mb-3">
+              <p className="text-sm text-igriz-elements-textSecondary mb-3">
                 New user-friendly desktop application with built-in model management and web interface.
               </p>
               <div className="grid md:grid-cols-2 gap-4">
-                <div className="p-3 rounded-lg bg-bolt-elements-background-depth-3">
+                <div className="p-3 rounded-lg bg-igriz-elements-background-depth-3">
                   <div className="flex items-center gap-2 mb-2">
-                    <Monitor className="w-4 h-4 text-bolt-elements-textPrimary" />
-                    <strong className="text-bolt-elements-textPrimary">macOS</strong>
+                    <Monitor className="w-4 h-4 text-igriz-elements-textPrimary" />
+                    <strong className="text-igriz-elements-textPrimary">macOS</strong>
                   </div>
                   <Button
                     variant="outline"
@@ -142,10 +142,10 @@ function SetupGuide({ onBack }: { onBack: () => void }) {
                     </a>
                   </Button>
                 </div>
-                <div className="p-3 rounded-lg bg-bolt-elements-background-depth-3">
+                <div className="p-3 rounded-lg bg-igriz-elements-background-depth-3">
                   <div className="flex items-center gap-2 mb-2">
-                    <Monitor className="w-4 h-4 text-bolt-elements-textPrimary" />
-                    <strong className="text-bolt-elements-textPrimary">Windows</strong>
+                    <Monitor className="w-4 h-4 text-igriz-elements-textPrimary" />
+                    <strong className="text-igriz-elements-textPrimary">Windows</strong>
                   </div>
                   <Button
                     variant="outline"
@@ -171,44 +171,44 @@ function SetupGuide({ onBack }: { onBack: () => void }) {
                   <Globe className="w-4 h-4 text-blue-500" />
                   <span className="font-medium text-blue-500 text-sm">Built-in Web Interface</span>
                 </div>
-                <p className="text-xs text-bolt-elements-textSecondary">
+                <p className="text-xs text-igriz-elements-textSecondary">
                   Desktop app includes a web interface at{' '}
-                  <code className="bg-bolt-elements-background-depth-4 px-1 rounded">http://localhost:11434</code>
+                  <code className="bg-igriz-elements-background-depth-4 px-1 rounded">http://localhost:11434</code>
                 </p>
               </div>
             </div>
 
             {/* CLI Installation */}
-            <div className="p-4 rounded-lg bg-bolt-elements-background-depth-3">
+            <div className="p-4 rounded-lg bg-igriz-elements-background-depth-3">
               <div className="flex items-center gap-2 mb-3">
-                <Terminal className="w-5 h-5 text-bolt-elements-textPrimary" />
-                <h5 className="font-medium text-bolt-elements-textPrimary">Command Line (Advanced)</h5>
+                <Terminal className="w-5 h-5 text-igriz-elements-textPrimary" />
+                <h5 className="font-medium text-igriz-elements-textPrimary">Command Line (Advanced)</h5>
               </div>
               <div className="grid md:grid-cols-3 gap-4">
-                <div className="p-3 rounded-lg bg-bolt-elements-background-depth-4">
+                <div className="p-3 rounded-lg bg-igriz-elements-background-depth-4">
                   <div className="flex items-center gap-2 mb-2">
-                    <Monitor className="w-4 h-4 text-bolt-elements-textPrimary" />
-                    <strong className="text-bolt-elements-textPrimary">Windows</strong>
+                    <Monitor className="w-4 h-4 text-igriz-elements-textPrimary" />
+                    <strong className="text-igriz-elements-textPrimary">Windows</strong>
                   </div>
-                  <div className="text-xs bg-bolt-elements-background-depth-4 p-2 rounded font-mono text-bolt-elements-textPrimary">
+                  <div className="text-xs bg-igriz-elements-background-depth-4 p-2 rounded font-mono text-igriz-elements-textPrimary">
                     winget install Ollama.Ollama
                   </div>
                 </div>
-                <div className="p-3 rounded-lg bg-bolt-elements-background-depth-4">
+                <div className="p-3 rounded-lg bg-igriz-elements-background-depth-4">
                   <div className="flex items-center gap-2 mb-2">
-                    <Monitor className="w-4 h-4 text-bolt-elements-textPrimary" />
-                    <strong className="text-bolt-elements-textPrimary">macOS</strong>
+                    <Monitor className="w-4 h-4 text-igriz-elements-textPrimary" />
+                    <strong className="text-igriz-elements-textPrimary">macOS</strong>
                   </div>
-                  <div className="text-xs bg-bolt-elements-background-depth-4 p-2 rounded font-mono text-bolt-elements-textPrimary">
+                  <div className="text-xs bg-igriz-elements-background-depth-4 p-2 rounded font-mono text-igriz-elements-textPrimary">
                     brew install ollama
                   </div>
                 </div>
-                <div className="p-3 rounded-lg bg-bolt-elements-background-depth-4">
+                <div className="p-3 rounded-lg bg-igriz-elements-background-depth-4">
                   <div className="flex items-center gap-2 mb-2">
-                    <Terminal className="w-4 h-4 text-bolt-elements-textPrimary" />
-                    <strong className="text-bolt-elements-textPrimary">Linux</strong>
+                    <Terminal className="w-4 h-4 text-igriz-elements-textPrimary" />
+                    <strong className="text-igriz-elements-textPrimary">Linux</strong>
                   </div>
-                  <div className="text-xs bg-bolt-elements-background-depth-4 p-2 rounded font-mono text-bolt-elements-textPrimary">
+                  <div className="text-xs bg-igriz-elements-background-depth-4 p-2 rounded font-mono text-igriz-elements-textPrimary">
                     curl -fsSL https://ollama.com/install.sh | sh
                   </div>
                 </div>
@@ -218,17 +218,17 @@ function SetupGuide({ onBack }: { onBack: () => void }) {
 
           {/* Latest Model Recommendations */}
           <div className="space-y-4">
-            <h4 className="font-medium text-bolt-elements-textPrimary flex items-center gap-2">
+            <h4 className="font-medium text-igriz-elements-textPrimary flex items-center gap-2">
               <Package className="w-4 h-4" />
               2. Download Latest Models
             </h4>
             <div className="grid md:grid-cols-2 gap-4">
-              <div className="p-4 rounded-lg bg-bolt-elements-background-depth-3">
-                <h5 className="font-medium text-bolt-elements-textPrimary mb-3 flex items-center gap-2">
+              <div className="p-4 rounded-lg bg-igriz-elements-background-depth-3">
+                <h5 className="font-medium text-igriz-elements-textPrimary mb-3 flex items-center gap-2">
                   <Code className="w-4 h-4 text-green-500" />
                   Code & Development
                 </h5>
-                <div className="space-y-2 text-xs bg-bolt-elements-background-depth-4 p-3 rounded font-mono text-bolt-elements-textPrimary">
+                <div className="space-y-2 text-xs bg-igriz-elements-background-depth-4 p-3 rounded font-mono text-igriz-elements-textPrimary">
                   <div># Latest Llama 3.2 for coding</div>
                   <div>ollama pull llama3.2:3b</div>
                   <div>ollama pull codellama:13b</div>
@@ -236,12 +236,12 @@ function SetupGuide({ onBack }: { onBack: () => void }) {
                   <div>ollama pull qwen2.5-coder:7b</div>
                 </div>
               </div>
-              <div className="p-4 rounded-lg bg-bolt-elements-background-depth-3">
-                <h5 className="font-medium text-bolt-elements-textPrimary mb-3 flex items-center gap-2">
+              <div className="p-4 rounded-lg bg-igriz-elements-background-depth-3">
+                <h5 className="font-medium text-igriz-elements-textPrimary mb-3 flex items-center gap-2">
                   <Terminal className="w-4 h-4 text-blue-500" />
                   General Purpose & Chat
                 </h5>
-                <div className="space-y-2 text-xs bg-bolt-elements-background-depth-4 p-3 rounded font-mono text-bolt-elements-textPrimary">
+                <div className="space-y-2 text-xs bg-igriz-elements-background-depth-4 p-3 rounded font-mono text-igriz-elements-textPrimary">
                   <div># Latest general models</div>
                   <div>ollama pull llama3.2:3b</div>
                   <div>ollama pull mistral:7b</div>
@@ -256,7 +256,7 @@ function SetupGuide({ onBack }: { onBack: () => void }) {
                   <Activity className="w-4 h-4 text-purple-500" />
                   <span className="font-medium text-purple-500">Performance Optimized</span>
                 </div>
-                <ul className="text-xs text-bolt-elements-textSecondary space-y-1">
+                <ul className="text-xs text-igriz-elements-textSecondary space-y-1">
                   <li>• Llama 3.2: 3B - Fastest, 8GB RAM</li>
                   <li>• Phi-3.5: 3.8B - Great balance</li>
                   <li>• Qwen2.5: 7B - Excellent quality</li>
@@ -268,7 +268,7 @@ function SetupGuide({ onBack }: { onBack: () => void }) {
                   <AlertCircle className="w-4 h-4 text-yellow-500" />
                   <span className="font-medium text-yellow-500">Pro Tips</span>
                 </div>
-                <ul className="text-xs text-bolt-elements-textSecondary space-y-1">
+                <ul className="text-xs text-igriz-elements-textSecondary space-y-1">
                   <li>• Start with 3B-7B models for best performance</li>
                   <li>• Use quantized versions for faster loading</li>
                   <li>• Desktop app auto-manages model storage</li>
@@ -280,7 +280,7 @@ function SetupGuide({ onBack }: { onBack: () => void }) {
 
           {/* Desktop App Features */}
           <div className="space-y-4">
-            <h4 className="font-medium text-bolt-elements-textPrimary flex items-center gap-2">
+            <h4 className="font-medium text-igriz-elements-textPrimary flex items-center gap-2">
               <Monitor className="w-4 h-4" />
               3. Desktop App Features
             </h4>
@@ -288,7 +288,7 @@ function SetupGuide({ onBack }: { onBack: () => void }) {
               <div className="grid md:grid-cols-2 gap-6">
                 <div>
                   <h5 className="font-medium text-blue-500 mb-3">🖥️ User Interface</h5>
-                  <ul className="text-sm text-bolt-elements-textSecondary space-y-1">
+                  <ul className="text-sm text-igriz-elements-textSecondary space-y-1">
                     <li>• Model library browser</li>
                     <li>• One-click model downloads</li>
                     <li>• Built-in chat interface</li>
@@ -297,7 +297,7 @@ function SetupGuide({ onBack }: { onBack: () => void }) {
                 </div>
                 <div>
                   <h5 className="font-medium text-blue-500 mb-3">🔧 Management Tools</h5>
-                  <ul className="text-sm text-bolt-elements-textSecondary space-y-1">
+                  <ul className="text-sm text-igriz-elements-textSecondary space-y-1">
                     <li>• Automatic updates</li>
                     <li>• Model size optimization</li>
                     <li>• GPU acceleration detection</li>
@@ -310,14 +310,14 @@ function SetupGuide({ onBack }: { onBack: () => void }) {
 
           {/* Troubleshooting */}
           <div className="space-y-4">
-            <h4 className="font-medium text-bolt-elements-textPrimary flex items-center gap-2">
+            <h4 className="font-medium text-igriz-elements-textPrimary flex items-center gap-2">
               <Settings className="w-4 h-4" />
               4. Troubleshooting & Commands
             </h4>
             <div className="grid md:grid-cols-2 gap-4">
               <div className="p-4 rounded-lg bg-red-500/5 border border-red-500/20">
                 <h5 className="font-medium text-red-500 mb-2">Common Issues</h5>
-                <ul className="text-xs text-bolt-elements-textSecondary space-y-1">
+                <ul className="text-xs text-igriz-elements-textSecondary space-y-1">
                   <li>• Desktop app not starting: Restart system</li>
                   <li>• GPU not detected: Update drivers</li>
                   <li>• Port 11434 blocked: Change port in settings</li>
@@ -327,7 +327,7 @@ function SetupGuide({ onBack }: { onBack: () => void }) {
               </div>
               <div className="p-4 rounded-lg bg-green-500/5 border border-green-500/20">
                 <h5 className="font-medium text-green-500 mb-2">Useful Commands</h5>
-                <div className="text-xs bg-bolt-elements-background-depth-4 p-3 rounded font-mono text-bolt-elements-textPrimary space-y-1">
+                <div className="text-xs bg-igriz-elements-background-depth-4 p-3 rounded font-mono text-igriz-elements-textPrimary space-y-1">
                   <div># Check installed models</div>
                   <div>ollama list</div>
                   <div></div>
@@ -347,15 +347,15 @@ function SetupGuide({ onBack }: { onBack: () => void }) {
       </Card>
 
       {/* LM Studio Setup Section */}
-      <Card className="bg-bolt-elements-background-depth-2 shadow-sm">
+      <Card className="bg-igriz-elements-background-depth-2 shadow-sm">
         <CardHeader className="pb-6">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-600/20 flex items-center justify-center ring-1 ring-blue-500/30">
               <Monitor className="w-6 h-6 text-blue-500" />
             </div>
             <div className="flex-1">
-              <h3 className="text-xl font-semibold text-bolt-elements-textPrimary">LM Studio Setup</h3>
-              <p className="text-sm text-bolt-elements-textSecondary">
+              <h3 className="text-xl font-semibold text-igriz-elements-textPrimary">LM Studio Setup</h3>
+              <p className="text-sm text-igriz-elements-textSecondary">
                 User-friendly GUI for running local models with excellent model management
               </p>
             </div>
@@ -364,12 +364,12 @@ function SetupGuide({ onBack }: { onBack: () => void }) {
         <CardContent className="space-y-6">
           {/* Installation */}
           <div className="space-y-4">
-            <h4 className="font-medium text-bolt-elements-textPrimary flex items-center gap-2">
+            <h4 className="font-medium text-igriz-elements-textPrimary flex items-center gap-2">
               <Download className="w-4 h-4" />
               1. Download & Install
             </h4>
-            <div className="p-4 rounded-lg bg-bolt-elements-background-depth-3">
-              <p className="text-sm text-bolt-elements-textSecondary mb-3">
+            <div className="p-4 rounded-lg bg-igriz-elements-background-depth-3">
+              <p className="text-sm text-igriz-elements-textSecondary mb-3">
                 Download LM Studio for Windows, macOS, or Linux from the official website.
               </p>
               <Button
@@ -394,14 +394,14 @@ function SetupGuide({ onBack }: { onBack: () => void }) {
 
           {/* Configuration */}
           <div className="space-y-4">
-            <h4 className="font-medium text-bolt-elements-textPrimary flex items-center gap-2">
+            <h4 className="font-medium text-igriz-elements-textPrimary flex items-center gap-2">
               <Settings className="w-4 h-4" />
               2. Configure Local Server
             </h4>
             <div className="space-y-3">
-              <div className="p-4 rounded-lg bg-bolt-elements-background-depth-3">
-                <h5 className="font-medium text-bolt-elements-textPrimary mb-2">Start Local Server</h5>
-                <ol className="text-xs text-bolt-elements-textSecondary space-y-1 list-decimal list-inside">
+              <div className="p-4 rounded-lg bg-igriz-elements-background-depth-3">
+                <h5 className="font-medium text-igriz-elements-textPrimary mb-2">Start Local Server</h5>
+                <ol className="text-xs text-igriz-elements-textSecondary space-y-1 list-decimal list-inside">
                   <li>Download a model from the "My Models" tab</li>
                   <li>Go to "Local Server" tab</li>
                   <li>Select your downloaded model</li>
@@ -416,15 +416,15 @@ function SetupGuide({ onBack }: { onBack: () => void }) {
                   <span className="font-medium text-red-500">Critical: Enable CORS</span>
                 </div>
                 <div className="space-y-2">
-                  <p className="text-xs text-bolt-elements-textSecondary">
-                    To work with Bolt DIY, you MUST enable CORS in LM Studio:
+                  <p className="text-xs text-igriz-elements-textSecondary">
+                    To work with igriz DIY, you MUST enable CORS in LM Studio:
                   </p>
-                  <ol className="text-xs text-bolt-elements-textSecondary space-y-1 list-decimal list-inside ml-2">
+                  <ol className="text-xs text-igriz-elements-textSecondary space-y-1 list-decimal list-inside ml-2">
                     <li>In Server Settings, check "Enable CORS"</li>
                     <li>Set Network Interface to "0.0.0.0" for external access</li>
                     <li>
                       Alternatively, use CLI:{' '}
-                      <code className="bg-bolt-elements-background-depth-4 px-1 rounded">lms server start --cors</code>
+                      <code className="bg-igriz-elements-background-depth-4 px-1 rounded">lms server start --cors</code>
                     </li>
                   </ol>
                 </div>
@@ -438,7 +438,7 @@ function SetupGuide({ onBack }: { onBack: () => void }) {
               <CheckCircle className="w-4 h-4 text-blue-500" />
               <span className="font-medium text-blue-500">LM Studio Advantages</span>
             </div>
-            <ul className="text-xs text-bolt-elements-textSecondary space-y-1 list-disc list-inside">
+            <ul className="text-xs text-igriz-elements-textSecondary space-y-1 list-disc list-inside">
               <li>Built-in model downloader with search</li>
               <li>Easy model switching and management</li>
               <li>Built-in chat interface for testing</li>
@@ -450,15 +450,15 @@ function SetupGuide({ onBack }: { onBack: () => void }) {
       </Card>
 
       {/* LocalAI Setup Section */}
-      <Card className="bg-bolt-elements-background-depth-2 shadow-sm">
+      <Card className="bg-igriz-elements-background-depth-2 shadow-sm">
         <CardHeader className="pb-6">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500/20 to-green-600/20 flex items-center justify-center ring-1 ring-green-500/30">
               <Globe className="w-6 h-6 text-green-500" />
             </div>
             <div className="flex-1">
-              <h3 className="text-xl font-semibold text-bolt-elements-textPrimary">LocalAI Setup</h3>
-              <p className="text-sm text-bolt-elements-textSecondary">
+              <h3 className="text-xl font-semibold text-igriz-elements-textPrimary">LocalAI Setup</h3>
+              <p className="text-sm text-igriz-elements-textSecondary">
                 Self-hosted OpenAI-compatible API server with extensive model support
               </p>
             </div>
@@ -467,21 +467,21 @@ function SetupGuide({ onBack }: { onBack: () => void }) {
         <CardContent className="space-y-6">
           {/* Installation */}
           <div className="space-y-4">
-            <h4 className="font-medium text-bolt-elements-textPrimary flex items-center gap-2">
+            <h4 className="font-medium text-igriz-elements-textPrimary flex items-center gap-2">
               <Download className="w-4 h-4" />
               Installation Options
             </h4>
             <div className="grid md:grid-cols-2 gap-4">
-              <div className="p-4 rounded-lg bg-bolt-elements-background-depth-3">
-                <h5 className="font-medium text-bolt-elements-textPrimary mb-2">Quick Install</h5>
-                <div className="text-xs bg-bolt-elements-background-depth-4 p-3 rounded font-mono text-bolt-elements-textPrimary space-y-1">
+              <div className="p-4 rounded-lg bg-igriz-elements-background-depth-3">
+                <h5 className="font-medium text-igriz-elements-textPrimary mb-2">Quick Install</h5>
+                <div className="text-xs bg-igriz-elements-background-depth-4 p-3 rounded font-mono text-igriz-elements-textPrimary space-y-1">
                   <div># One-line install</div>
                   <div>curl https://localai.io/install.sh | sh</div>
                 </div>
               </div>
-              <div className="p-4 rounded-lg bg-bolt-elements-background-depth-3">
-                <h5 className="font-medium text-bolt-elements-textPrimary mb-2">Docker (Recommended)</h5>
-                <div className="text-xs bg-bolt-elements-background-depth-4 p-3 rounded font-mono text-bolt-elements-textPrimary space-y-1">
+              <div className="p-4 rounded-lg bg-igriz-elements-background-depth-3">
+                <h5 className="font-medium text-igriz-elements-textPrimary mb-2">Docker (Recommended)</h5>
+                <div className="text-xs bg-igriz-elements-background-depth-4 p-3 rounded font-mono text-igriz-elements-textPrimary space-y-1">
                   <div>docker run -p 8080:8080</div>
                   <div>quay.io/go-skynet/local-ai:latest</div>
                 </div>
@@ -491,15 +491,15 @@ function SetupGuide({ onBack }: { onBack: () => void }) {
 
           {/* Configuration */}
           <div className="space-y-4">
-            <h4 className="font-medium text-bolt-elements-textPrimary flex items-center gap-2">
+            <h4 className="font-medium text-igriz-elements-textPrimary flex items-center gap-2">
               <Settings className="w-4 h-4" />
               Configuration
             </h4>
-            <div className="p-4 rounded-lg bg-bolt-elements-background-depth-3">
-              <p className="text-sm text-bolt-elements-textSecondary mb-3">
+            <div className="p-4 rounded-lg bg-igriz-elements-background-depth-3">
+              <p className="text-sm text-igriz-elements-textSecondary mb-3">
                 LocalAI supports many model formats and provides a full OpenAI-compatible API.
               </p>
-              <div className="text-xs bg-bolt-elements-background-depth-4 p-3 rounded font-mono text-bolt-elements-textPrimary space-y-1">
+              <div className="text-xs bg-igriz-elements-background-depth-4 p-3 rounded font-mono text-igriz-elements-textPrimary space-y-1">
                 <div># Example configuration</div>
                 <div>models:</div>
                 <div>- name: llama3.1</div>
@@ -516,7 +516,7 @@ function SetupGuide({ onBack }: { onBack: () => void }) {
               <CheckCircle className="w-4 h-4 text-green-500" />
               <span className="font-medium text-green-500">LocalAI Advantages</span>
             </div>
-            <ul className="text-xs text-bolt-elements-textSecondary space-y-1 list-disc list-inside">
+            <ul className="text-xs text-igriz-elements-textSecondary space-y-1 list-disc list-inside">
               <li>Full OpenAI API compatibility</li>
               <li>Supports multiple model formats</li>
               <li>Docker deployment option</li>
@@ -535,16 +535,16 @@ function SetupGuide({ onBack }: { onBack: () => void }) {
               <Activity className="w-5 h-5 text-purple-500" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-bolt-elements-textPrimary">Performance Optimization</h3>
-              <p className="text-sm text-bolt-elements-textSecondary">Tips to improve local AI performance</p>
+              <h3 className="text-lg font-semibold text-igriz-elements-textPrimary">Performance Optimization</h3>
+              <p className="text-sm text-igriz-elements-textSecondary">Tips to improve local AI performance</p>
             </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid md:grid-cols-2 gap-4">
             <div className="space-y-3">
-              <h4 className="font-medium text-bolt-elements-textPrimary">Hardware Optimizations</h4>
-              <ul className="text-sm text-bolt-elements-textSecondary space-y-2">
+              <h4 className="font-medium text-igriz-elements-textPrimary">Hardware Optimizations</h4>
+              <ul className="text-sm text-igriz-elements-textSecondary space-y-2">
                 <li className="flex items-start gap-2">
                   <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
                   <span>Use NVIDIA GPU with CUDA for 5-10x speedup</span>
@@ -564,8 +564,8 @@ function SetupGuide({ onBack }: { onBack: () => void }) {
               </ul>
             </div>
             <div className="space-y-3">
-              <h4 className="font-medium text-bolt-elements-textPrimary">Software Optimizations</h4>
-              <ul className="text-sm text-bolt-elements-textSecondary space-y-2">
+              <h4 className="font-medium text-igriz-elements-textPrimary">Software Optimizations</h4>
+              <ul className="text-sm text-igriz-elements-textSecondary space-y-2">
                 <li className="flex items-start gap-2">
                   <CheckCircle className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
                   <span>Use smaller models for faster responses</span>
@@ -589,15 +589,15 @@ function SetupGuide({ onBack }: { onBack: () => void }) {
       </Card>
 
       {/* Alternative Options */}
-      <Card className="bg-bolt-elements-background-depth-2 shadow-sm">
+      <Card className="bg-igriz-elements-background-depth-2 shadow-sm">
         <CardHeader className="pb-6">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500/20 to-red-500/20 flex items-center justify-center ring-1 ring-orange-500/30">
               <Wifi className="w-6 h-6 text-orange-500" />
             </div>
             <div>
-              <h3 className="text-xl font-semibold text-bolt-elements-textPrimary">Alternative Options</h3>
-              <p className="text-sm text-bolt-elements-textSecondary">
+              <h3 className="text-xl font-semibold text-igriz-elements-textPrimary">Alternative Options</h3>
+              <p className="text-sm text-igriz-elements-textSecondary">
                 Other local AI solutions and cloud alternatives
               </p>
             </div>
@@ -606,58 +606,58 @@ function SetupGuide({ onBack }: { onBack: () => void }) {
         <CardContent className="space-y-6">
           <div className="grid md:grid-cols-2 gap-6">
             <div className="space-y-4">
-              <h4 className="font-medium text-bolt-elements-textPrimary">Other Local Solutions</h4>
+              <h4 className="font-medium text-igriz-elements-textPrimary">Other Local Solutions</h4>
               <div className="space-y-3">
-                <div className="p-3 rounded-lg bg-bolt-elements-background-depth-3">
+                <div className="p-3 rounded-lg bg-igriz-elements-background-depth-3">
                   <div className="flex items-center gap-2 mb-1">
                     <Package className="w-4 h-4 text-blue-500" />
-                    <span className="font-medium text-bolt-elements-textPrimary">Jan.ai</span>
+                    <span className="font-medium text-igriz-elements-textPrimary">Jan.ai</span>
                   </div>
-                  <p className="text-xs text-bolt-elements-textSecondary">
+                  <p className="text-xs text-igriz-elements-textSecondary">
                     Modern interface with built-in model marketplace
                   </p>
                 </div>
-                <div className="p-3 rounded-lg bg-bolt-elements-background-depth-3">
+                <div className="p-3 rounded-lg bg-igriz-elements-background-depth-3">
                   <div className="flex items-center gap-2 mb-1">
                     <Terminal className="w-4 h-4 text-green-500" />
-                    <span className="font-medium text-bolt-elements-textPrimary">Oobabooga</span>
+                    <span className="font-medium text-igriz-elements-textPrimary">Oobabooga</span>
                   </div>
-                  <p className="text-xs text-bolt-elements-textSecondary">
+                  <p className="text-xs text-igriz-elements-textSecondary">
                     Advanced text generation web UI with extensions
                   </p>
                 </div>
-                <div className="p-3 rounded-lg bg-bolt-elements-background-depth-3">
+                <div className="p-3 rounded-lg bg-igriz-elements-background-depth-3">
                   <div className="flex items-center gap-2 mb-1">
                     <Cable className="w-4 h-4 text-purple-500" />
-                    <span className="font-medium text-bolt-elements-textPrimary">KoboldAI</span>
+                    <span className="font-medium text-igriz-elements-textPrimary">KoboldAI</span>
                   </div>
-                  <p className="text-xs text-bolt-elements-textSecondary">Focus on creative writing and storytelling</p>
+                  <p className="text-xs text-igriz-elements-textSecondary">Focus on creative writing and storytelling</p>
                 </div>
               </div>
             </div>
             <div className="space-y-4">
-              <h4 className="font-medium text-bolt-elements-textPrimary">Cloud Alternatives</h4>
+              <h4 className="font-medium text-igriz-elements-textPrimary">Cloud Alternatives</h4>
               <div className="space-y-3">
-                <div className="p-3 rounded-lg bg-bolt-elements-background-depth-3">
+                <div className="p-3 rounded-lg bg-igriz-elements-background-depth-3">
                   <div className="flex items-center gap-2 mb-1">
                     <Globe className="w-4 h-4 text-orange-500" />
-                    <span className="font-medium text-bolt-elements-textPrimary">OpenRouter</span>
+                    <span className="font-medium text-igriz-elements-textPrimary">OpenRouter</span>
                   </div>
-                  <p className="text-xs text-bolt-elements-textSecondary">Access to 100+ models through unified API</p>
+                  <p className="text-xs text-igriz-elements-textSecondary">Access to 100+ models through unified API</p>
                 </div>
-                <div className="p-3 rounded-lg bg-bolt-elements-background-depth-3">
+                <div className="p-3 rounded-lg bg-igriz-elements-background-depth-3">
                   <div className="flex items-center gap-2 mb-1">
                     <Server className="w-4 h-4 text-red-500" />
-                    <span className="font-medium text-bolt-elements-textPrimary">Together AI</span>
+                    <span className="font-medium text-igriz-elements-textPrimary">Together AI</span>
                   </div>
-                  <p className="text-xs text-bolt-elements-textSecondary">Fast inference with open-source models</p>
+                  <p className="text-xs text-igriz-elements-textSecondary">Fast inference with open-source models</p>
                 </div>
-                <div className="p-3 rounded-lg bg-bolt-elements-background-depth-3">
+                <div className="p-3 rounded-lg bg-igriz-elements-background-depth-3">
                   <div className="flex items-center gap-2 mb-1">
                     <Activity className="w-4 h-4 text-pink-500" />
-                    <span className="font-medium text-bolt-elements-textPrimary">Groq</span>
+                    <span className="font-medium text-igriz-elements-textPrimary">Groq</span>
                   </div>
-                  <p className="text-xs text-bolt-elements-textSecondary">Ultra-fast LPU inference for Llama models</p>
+                  <p className="text-xs text-igriz-elements-textSecondary">Ultra-fast LPU inference for Llama models</p>
                 </div>
               </div>
             </div>

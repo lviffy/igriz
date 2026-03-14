@@ -1,10 +1,10 @@
 services:
   app-prod:
-    image: bolt-ai:production
+    image: igriz-ai:production
     build:
       context: .
       dockerfile: Dockerfile
-      target: bolt-ai-production
+      target: igriz-ai-production
     ports:
       - '5173:5173'
     env_file: 
@@ -36,7 +36,7 @@ services:
       - production
 
   app-dev:
-    image: bolt-ai:development
+    image: igriz-ai:development
     build:
       context: .
       dockerfile: Dockerfile
@@ -80,7 +80,7 @@ services:
     profiles: ['development', 'default']
 
   app-prebuild:
-    image: ghcr.io/stackblitz-labs/bolt.diy:latest
+    image: ghcr.io/stackblitz-labs/igriz.diy:latest
     ports:
       - '5173:5173'
     environment:

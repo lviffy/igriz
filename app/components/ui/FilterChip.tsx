@@ -46,7 +46,7 @@ export function FilterChip({ label, value, onRemove, active = false, icon, class
         'inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all',
         active
           ? 'bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/30'
-          : 'bg-bolt-elements-background-depth-2 dark:bg-bolt-elements-background-depth-3 text-bolt-elements-textSecondary dark:text-bolt-elements-textSecondary-dark border border-bolt-elements-borderColor dark:border-bolt-elements-borderColor-dark',
+          : 'bg-igriz-elements-background-depth-2 dark:bg-igriz-elements-background-depth-3 text-igriz-elements-textSecondary dark:text-igriz-elements-textSecondary-dark border border-igriz-elements-borderColor dark:border-igriz-elements-borderColor-dark',
         onRemove && 'pr-1',
         className,
       )}
@@ -63,7 +63,7 @@ export function FilterChip({ label, value, onRemove, active = false, icon, class
             className={
               active
                 ? 'text-purple-700 dark:text-purple-300 font-semibold'
-                : 'text-bolt-elements-textPrimary dark:text-bolt-elements-textPrimary-dark'
+                : 'text-igriz-elements-textPrimary dark:text-igriz-elements-textPrimary-dark'
             }
           >
             {value}
@@ -77,10 +77,10 @@ export function FilterChip({ label, value, onRemove, active = false, icon, class
           type="button"
           onClick={onRemove}
           className={classNames(
-            'ml-1 p-0.5 rounded-full hover:bg-bolt-elements-background-depth-3 dark:hover:bg-bolt-elements-background-depth-4 transition-colors',
+            'ml-1 p-0.5 rounded-full hover:bg-igriz-elements-background-depth-3 dark:hover:bg-igriz-elements-background-depth-4 transition-colors',
             active
               ? 'text-purple-600 dark:text-purple-400'
-              : 'text-bolt-elements-textTertiary dark:text-bolt-elements-textTertiary-dark',
+              : 'text-igriz-elements-textTertiary dark:text-igriz-elements-textTertiary-dark',
           )}
           aria-label={`Remove ${label} filter`}
         >
