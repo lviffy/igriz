@@ -8,7 +8,7 @@ import { motion } from 'framer-motion';
 import { classNames } from '~/utils/classNames';
 import { toast } from 'react-toastify';
 import { providerBaseUrlEnvKeys } from '~/utils/constants';
-import { SiGoogle, SiGithub, SiHuggingface, SiPerplexity, SiOpenai, SiRootsbedrock } from 'react-icons/si';
+import { SiGoogle, SiGithub, SiHuggingface, SiNvidia, SiPerplexity, SiOpenai, SiRootsbedrock } from 'react-icons/si';
 import { BsRobot, BsCloud } from 'react-icons/bs';
 import { TbBrain, TbCloudComputing } from 'react-icons/tb';
 import { BiCodeBlock, BiChip } from 'react-icons/bi';
@@ -27,6 +27,7 @@ type ProviderName =
   | 'HuggingFace'
   | 'Hyperbolic'
   | 'Mistral'
+  | 'Nvidia'
   | 'OpenAI'
   | 'OpenRouter'
   | 'Perplexity'
@@ -45,6 +46,7 @@ const PROVIDER_ICONS: Record<ProviderName, IconType> = {
   HuggingFace: SiHuggingface,
   Hyperbolic: TbCloudComputing,
   Mistral: TbBrain,
+  Nvidia: SiNvidia,
   OpenAI: SiOpenai,
   OpenRouter: FaCloud,
   Perplexity: SiPerplexity,
@@ -56,6 +58,7 @@ const PROVIDER_ICONS: Record<ProviderName, IconType> = {
 const PROVIDER_DESCRIPTIONS: Partial<Record<ProviderName, string>> = {
   Anthropic: 'Access Claude and other Anthropic models',
   Github: 'Use OpenAI models hosted through GitHub infrastructure',
+  Nvidia: 'Use NVIDIA NIM models through OpenAI-compatible API',
   OpenAI: 'Use GPT-4, GPT-3.5, and other OpenAI models',
 };
 
