@@ -355,17 +355,27 @@ export const getBlockchainSystemPrompt = (walletPrivateKey?: string) => `
     const factory = new ethers.ContractFactory(artifact.abi, artifact.bytecode, wallet);
     console.log('Deploying', CONTRACT_NAME, '...');
 
-    async function buildTxOverrides() {
+    function sleep(ms) {
+      return new Promise((resolve) => setTimeout(resolve, ms));
+    }
+
+    async function buildTxOverrides(multiplier = 2n, forcedNonce) {
       const feeData = await provider.getFeeData();
-      const nonce = await provider.getTransactionCount(wallet.address, 'pending');
+      const nonce =
+        typeof forcedNonce === 'number'
+          ? forcedNonce
+          : await provider.getTransactionCount(wallet.address, 'pending');
 
       const fallbackPriority = ethers.parseUnits('2', 'gwei');
-      const priority = feeData.maxPriorityFeePerGas && feeData.maxPriorityFeePerGas > 0n
-        ? feeData.maxPriorityFeePerGas * 2n
+      const basePriority = feeData.maxPriorityFeePerGas && feeData.maxPriorityFeePerGas > 0n
+        ? feeData.maxPriorityFeePerGas
         : fallbackPriority;
-      const maxFee = feeData.maxFeePerGas && feeData.maxFeePerGas > priority
-        ? feeData.maxFeePerGas * 2n
-        : priority * 3n;
+      const baseMaxFee = feeData.maxFeePerGas && feeData.maxFeePerGas > basePriority
+        ? feeData.maxFeePerGas
+        : basePriority * 2n;
+
+      const priority = basePriority * multiplier;
+      const maxFee = baseMaxFee * multiplier > priority * 2n ? baseMaxFee * multiplier : priority * 2n;
 
       return {
         nonce,
@@ -375,71 +385,71 @@ export const getBlockchainSystemPrompt = (walletPrivateKey?: string) => `
     }
 
     async function deployWithRetry() {
-      const overrides = await buildTxOverrides();
+      const overrides = await buildTxOverrides(2n);
 
       try {
         // If your contract has constructor args, pass them here:
-        // return await factory.deploy(arg1, arg2, overrides);
-        return await factory.deploy(overrides);
+        // const contract = await factory.deploy(arg1, arg2, overrides);
+        const contract = await factory.deploy(overrides);
+
+        return {
+          contract,
+          txHash: contract.deploymentTransaction()?.hash,
+          recovered: false,
+        };
       } catch (err) {
         const msg = String(err?.message || err);
 
-        // Handle Polkadot Hub mempool replacement/priority edge case.
+        // Handle replacement/priority edge case with same nonce and boosted fees.
         if (msg.includes('Priority is too low') || msg.includes('replacement transaction underpriced')) {
           console.warn('Low tx priority detected, retrying deploy with higher fees...');
-          const boosted = {
-            ...overrides,
-            maxPriorityFeePerGas: overrides.maxPriorityFeePerGas * 2n,
-            maxFeePerGas: overrides.maxFeePerGas * 2n,
+          const boosted = await buildTxOverrides(4n, overrides.nonce);
+          // const contract = await factory.deploy(arg1, arg2, boosted);
+          const contract = await factory.deploy(boosted);
+
+          return {
+            contract,
+            txHash: contract.deploymentTransaction()?.hash,
+            recovered: false,
           };
+        }
 
-    async function buildTxOverrides() {
-      const feeData = await provider.getFeeData();
-      const nonce = await provider.getTransactionCount(wallet.address, 'pending');
+        if (msg.includes('Transaction Already Imported')) {
+          const predictedAddress = ethers.getCreateAddress({ from: wallet.address, nonce: overrides.nonce });
+          console.warn('Transaction already imported. Waiting for contract to be mined at:', predictedAddress);
 
-      const fallbackPriority = ethers.parseUnits('2', 'gwei');
-      const priority = feeData.maxPriorityFeePerGas && feeData.maxPriorityFeePerGas > 0n
-        ? feeData.maxPriorityFeePerGas * 2n
-        : fallbackPriority;
-      const maxFee = feeData.maxFeePerGas && feeData.maxFeePerGas > priority
-        ? feeData.maxFeePerGas * 2n
-        : priority * 3n;
+          for (let i = 0; i < 12; i++) {
+            await sleep(5000);
+            const code = await provider.getCode(predictedAddress);
 
-      return {
-        nonce,
-        maxPriorityFeePerGas: priority,
-        maxFeePerGas: maxFee,
-      };
+            if (code && code !== '0x') {
+              return {
+                contract: new ethers.Contract(predictedAddress, artifact.abi, wallet),
+                txHash: null,
+                recovered: true,
+              };
+            }
+          }
+
+          throw new Error('Transaction already imported but deployment not mined yet. Check explorer and re-run after it confirms.');
+        }
+
+        throw err;
+      }
     }
 
-    async function deployWithRetry() {
-      const overrides = await buildTxOverrides();
+    const { contract, txHash, recovered } = await deployWithRetry();
 
-      try {
-        // If your contract has constructor args, pass them here:
-        // return await factory.deploy(arg1, arg2, overrides);
-        return await factory.deploy(overrides);
-      } catch (err) {
-        const msg = String(err?.message || err);
+    if (txHash) {
+      console.log('Tx hash:', txHash);
+      console.log('Track: ', EXPLORER + 'tx/' + txHash);
+    }
 
-        // Handle Polkadot Hub mempool replacement/priority edge case.
-        if (msg.includes('Priority is too low') || msg.includes('replacement transaction underpriced')) {
-          console.warn('Low tx priority detected, retrying deploy with higher fees...');
-          const boosted = {
-            ...overrides,
-            maxPriorityFeePerGas: overrides.maxPriorityFeePerGas * 2n,
-            maxFeePerGas: overrides.maxFeePerGas * 2n,
-          };
+    if (!recovered) {
+      await contract.waitForDeployment();
+    }
 
-    // If your contract has constructor args, pass them here:
-    // const contract = await factory.deploy(arg1, arg2);
-    const contract = await factory.deploy();
-    const txHash = contract.deploymentTransaction().hash;
-    console.log('Tx hash:', txHash);
-    console.log('Track: ', EXPLORER + 'tx/' + txHash);
-
-    await contract.waitForDeployment();
-    const address = await contract.getAddress();
+    const address = recovered ? contract.target : await contract.getAddress();
     console.log('Deployed at:', address);
     console.log('Explorer:  ', EXPLORER + 'address/' + address);
 
