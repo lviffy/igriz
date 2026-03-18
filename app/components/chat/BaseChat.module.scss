@@ -33,6 +33,21 @@
   height: calc(100% + var(--prompt-container-offset));
 }
 
+.PromptBox {
+  &:hover {
+    .PromptEffectLine {
+      stroke-dashoffset: -34;
+      transform: none;
+      opacity: 0.9;
+    }
+
+    .PromptShine {
+      transform: translate(136px, 0);
+      opacity: 0.78;
+    }
+  }
+}
+
 .PromptEffectLine {
   width: calc(100% - var(--prompt-container-offset) + var(--prompt-line-stroke-width));
   height: calc(100% - var(--prompt-container-offset) + var(--prompt-line-stroke-width));
@@ -44,9 +59,23 @@
   stroke: url(#line-gradient);
   stroke-dasharray: 35px 65px;
   stroke-dashoffset: 10;
+  transition: stroke-dashoffset 0.35s ease, transform 0.35s ease, opacity 0.35s ease;
+  transform-origin: center;
+  opacity: 0.75;
 }
 
 .PromptShine {
   fill: url(#shine-gradient);
   mix-blend-mode: overlay;
+  transition: transform 0.35s ease, opacity 0.35s ease;
+  transform-origin: center;
+  opacity: 0.5;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .PromptEffectLine,
+  .PromptShine {
+    transition: none;
+    transform: none;
+  }
 }

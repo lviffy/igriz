@@ -69,6 +69,7 @@ export const ChatBox: React.FC<ChatBoxProps> = (props) => {
   return (
     <div
       className={classNames(
+        styles.PromptBox,
         'relative bg-igriz-elements-background-depth-2 backdrop-blur p-3 rounded-lg border border-igriz-elements-borderColor relative w-full max-w-chat mx-auto z-prompt',
 
         /*
