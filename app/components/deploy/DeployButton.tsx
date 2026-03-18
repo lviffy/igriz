@@ -1,5 +1,6 @@
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { useStore } from '@nanostores/react';
+import { auditStore } from '~/lib/stores/audit';
 import { vercelConnection } from '~/lib/stores/vercel';
 import { workbenchStore } from '~/lib/stores/workbench';
 import { streamingState } from '~/lib/stores/streaming';
@@ -19,7 +20,10 @@ export const DeployButton = ({ onVercelDeploy }: DeployButtonProps) => {
   const activePreview = previews[activePreviewIndex];
   const [isDeploying, setIsDeploying] = useState(false);
   const isStreaming = useStore(streamingState);
+  const auditState = useStore(auditStore);
   const { handleVercelDeploy } = useVercelDeploy();
+  const isAuditBlockingDeploy =
+    auditState.status === 'ready' && !auditState.acknowledged && !auditState.dismissed;
 
   const handleVercelDeployClick = async () => {
     setIsDeploying(true);
@@ -39,10 +43,18 @@ export const DeployButton = ({ onVercelDeploy }: DeployButtonProps) => {
     <div className="flex border border-igriz-elements-borderColor rounded-md overflow-hidden text-sm">
       <DropdownMenu.Root>
         <DropdownMenu.Trigger
-          disabled={isDeploying || !activePreview || isStreaming}
-          className="rounded-md items-center justify-center [&:is(:disabled,.disabled)]:cursor-not-allowed [&:is(:disabled,.disabled)]:opacity-60 px-3 py-1.5 text-xs bg-accent-500 text-white hover:text-igriz-elements-item-contentAccent [&:not(:disabled,.disabled)]:hover:bg-igriz-elements-button-primary-backgroundHover outline-accent-500 flex gap-1.7"
+          disabled={isDeploying || !activePreview || isStreaming || isAuditBlockingDeploy}
+          title={
+            isAuditBlockingDeploy ? 'Acknowledge or dismiss the contract audit report before deploying' : undefined
+          }
+          className={classNames(
+            'rounded-md items-center justify-center [&:is(:disabled,.disabled)]:cursor-not-allowed [&:is(:disabled,.disabled)]:opacity-60 px-3 py-1.5 text-xs text-white outline-accent-500 flex gap-1.7',
+            isAuditBlockingDeploy
+              ? 'bg-igriz-elements-background-depth-3'
+              : 'bg-accent-500 hover:text-igriz-elements-item-contentAccent [&:not(:disabled,.disabled)]:hover:bg-igriz-elements-button-primary-backgroundHover',
+          )}
         >
-          {isDeploying ? 'Deploying to Vercel...' : 'Deploy'}
+          {isDeploying ? 'Deploying to Vercel...' : isAuditBlockingDeploy ? 'Audit Required' : 'Deploy'}
           <span className={classNames('i-ph:caret-down transition-transform')} />
         </DropdownMenu.Trigger>
         <DropdownMenu.Content

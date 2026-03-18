@@ -73,40 +73,203 @@ ${source}
       contextOptimization: false,
     });
 
-    let text = '';
+    const text = await readTextStream(result.textStream);
 
-    for await (const chunk of result.textStream) {
-      text += chunk;
+    let payload: unknown;
+
+    try {
+      payload = extractReportPayload(text);
+    } catch {
+      const normalizedText = await normalizeAuditJsonWithModel({
+        context,
+        provider,
+        model,
+        rawAuditOutput: text,
+      });
+
+      payload = extractReportPayload(normalizedText);
     }
 
-    const report = normalizeReport(extractReportPayload(text));
+    const report = normalizeReport(payload);
     return json({ report });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Audit failed';
+
+    // Keep audit flow alive even when model formatting is poor.
+    if (message.includes('Model returned non-JSON audit response')) {
+      return json({ report: EMPTY_REPORT, warning: message });
+    }
+
     return json({ error: message }, { status: 500 });
   }
 }
 
+async function readTextStream(stream: AsyncIterable<string>): Promise<string> {
+  let text = '';
+
+  for await (const chunk of stream) {
+    text += chunk;
+  }
+
+  return text;
+}
+
+async function normalizeAuditJsonWithModel({
+  context,
+  provider,
+  model,
+  rawAuditOutput,
+}: {
+  context: ActionFunctionArgs['context'];
+  provider?: string;
+  model?: string;
+  rawAuditOutput: string;
+}): Promise<string> {
+  const repairPrompt = `You are a strict JSON formatter.
+
+Convert the following audit output into valid JSON with EXACT top-level shape:
+{
+  "critical": [],
+  "high": [],
+  "medium": [],
+  "low": [],
+  "polkadot": []
+}
+
+Each finding item must be an object with:
+- title (string)
+- description (string)
+- recommendation (string)
+- location (string, optional)
+
+Rules:
+- Return JSON only.
+- No markdown fences.
+- No explanation text.
+- If a category has no findings, return [].
+
+Input to normalize:
+<audit_output>
+${rawAuditOutput}
+</audit_output>`;
+
+  const repairMessageContent =
+    provider && model
+      ? `[Model: ${model}]\n\n[Provider: ${provider}]\n\n${repairPrompt}`
+      : repairPrompt;
+
+  const repaired = await streamText({
+    messages: [{ role: 'user', content: repairMessageContent }],
+    env: context.cloudflare?.env,
+    chatMode: 'build',
+    contextOptimization: false,
+  });
+
+  return readTextStream(repaired.textStream);
+}
+
 function extractReportPayload(raw: string): unknown {
   const trimmed = raw.trim();
+  const candidates: string[] = [];
+
   const fencedJsonMatch = trimmed.match(/```json\s*([\s\S]*?)\s*```/i);
 
   if (fencedJsonMatch?.[1]) {
-    return JSON.parse(fencedJsonMatch[1]);
+    candidates.push(fencedJsonMatch[1].trim());
   }
+
+  const fencedGenericMatch = trimmed.match(/```\s*([\s\S]*?)\s*```/i);
+
+  if (fencedGenericMatch?.[1]) {
+    candidates.push(fencedGenericMatch[1].trim());
+  }
+
+  candidates.push(trimmed);
+
+  const firstObject = extractFirstJsonObject(trimmed);
+
+  if (firstObject) {
+    candidates.push(firstObject);
+  }
+
+  for (const candidate of candidates) {
+    const parsed = parseJsonCandidate(candidate);
+
+    if (parsed !== undefined) {
+      return parsed;
+    }
+  }
+
+  throw new Error('Model returned non-JSON audit response');
+}
+
+function parseJsonCandidate(candidate: string): unknown {
+  if (!candidate) {
+    return undefined;
+  }
+
+  const normalized = candidate.replace(/^\uFEFF/, '').trim();
 
   try {
-    return JSON.parse(trimmed);
+    return JSON.parse(normalized);
   } catch {
-    const firstBrace = trimmed.indexOf('{');
-    const lastBrace = trimmed.lastIndexOf('}');
+    // Retry with a minimal repair for a common LLM issue: trailing commas.
+    const noTrailingCommas = normalized.replace(/,\s*([}\]])/g, '$1');
 
-    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-      return JSON.parse(trimmed.slice(firstBrace, lastBrace + 1));
+    try {
+      return JSON.parse(noTrailingCommas);
+    } catch {
+      return undefined;
+    }
+  }
+}
+
+function extractFirstJsonObject(input: string): string | undefined {
+  const start = input.indexOf('{');
+
+  if (start === -1) {
+    return undefined;
+  }
+
+  let depth = 0;
+  let inString = false;
+  let isEscaped = false;
+
+  for (let i = start; i < input.length; i++) {
+    const ch = input[i];
+
+    if (inString) {
+      if (isEscaped) {
+        isEscaped = false;
+      } else if (ch === '\\') {
+        isEscaped = true;
+      } else if (ch === '"') {
+        inString = false;
+      }
+
+      continue;
     }
 
-    throw new Error('Model returned non-JSON audit response');
+    if (ch === '"') {
+      inString = true;
+      continue;
+    }
+
+    if (ch === '{') {
+      depth++;
+      continue;
+    }
+
+    if (ch === '}') {
+      depth--;
+
+      if (depth === 0) {
+        return input.slice(start, i + 1);
+      }
+    }
   }
+
+  return undefined;
 }
 
 function normalizeReport(value: unknown): ContractAuditReport {
