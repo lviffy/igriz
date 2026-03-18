@@ -1,8 +1,42 @@
+/* Accent Palette Tokens */
+:root,
+:root[data-accent='ember'] {
+  --igriz-accent-500: #dc2626;
+  --igriz-accent-600: #b91c1c;
+  --igriz-accent-700: #991b1b;
+  --igriz-accent-alpha-10: rgba(220, 38, 38, 0.1);
+  --igriz-accent-alpha-20: rgba(220, 38, 38, 0.2);
+}
+
+:root[data-accent='ocean'] {
+  --igriz-accent-500: #2563eb;
+  --igriz-accent-600: #1d4ed8;
+  --igriz-accent-700: #1e40af;
+  --igriz-accent-alpha-10: rgba(37, 99, 235, 0.1);
+  --igriz-accent-alpha-20: rgba(37, 99, 235, 0.2);
+}
+
+:root[data-accent='emerald'] {
+  --igriz-accent-500: #059669;
+  --igriz-accent-600: #047857;
+  --igriz-accent-700: #065f46;
+  --igriz-accent-alpha-10: rgba(5, 150, 105, 0.1);
+  --igriz-accent-alpha-20: rgba(5, 150, 105, 0.2);
+}
+
+:root[data-accent='sunset'] {
+  --igriz-accent-500: #ea580c;
+  --igriz-accent-600: #c2410c;
+  --igriz-accent-700: #9a3412;
+  --igriz-accent-alpha-10: rgba(234, 88, 12, 0.1);
+  --igriz-accent-alpha-20: rgba(234, 88, 12, 0.2);
+}
+
 /* Color Tokens Light Theme */
 :root,
 :root[data-theme='light'] {
   --igriz-elements-borderColor: theme('colors.alpha.gray.10');
-  --igriz-elements-borderColorActive: theme('colors.accent.600');
+  --igriz-elements-borderColorActive: var(--igriz-accent-600);
 
   --igriz-elements-bg-depth-1: theme('colors.white');
   --igriz-elements-bg-depth-2: theme('colors.gray.50');
@@ -16,9 +50,9 @@
   --igriz-elements-code-background: theme('colors.gray.100');
   --igriz-elements-code-text: theme('colors.gray.950');
 
-  --igriz-elements-button-primary-background: theme('colors.alpha.accent.10');
-  --igriz-elements-button-primary-backgroundHover: theme('colors.alpha.accent.20');
-  --igriz-elements-button-primary-text: theme('colors.accent.500');
+  --igriz-elements-button-primary-background: var(--igriz-accent-alpha-10);
+  --igriz-elements-button-primary-backgroundHover: var(--igriz-accent-alpha-20);
+  --igriz-elements-button-primary-text: var(--igriz-accent-500);
 
   --igriz-elements-button-secondary-background: theme('colors.alpha.gray.5');
   --igriz-elements-button-secondary-backgroundHover: theme('colors.alpha.gray.10');
@@ -30,15 +64,15 @@
 
   --igriz-elements-item-contentDefault: theme('colors.alpha.gray.50');
   --igriz-elements-item-contentActive: theme('colors.gray.950');
-  --igriz-elements-item-contentAccent: theme('colors.accent.700');
+  --igriz-elements-item-contentAccent: var(--igriz-accent-700);
   --igriz-elements-item-contentDanger: theme('colors.red.500');
   --igriz-elements-item-backgroundDefault: rgba(0, 0, 0, 0);
   --igriz-elements-item-backgroundActive: theme('colors.alpha.gray.5');
-  --igriz-elements-item-backgroundAccent: theme('colors.alpha.accent.10');
+  --igriz-elements-item-backgroundAccent: var(--igriz-accent-alpha-10);
   --igriz-elements-item-backgroundDanger: theme('colors.alpha.red.10');
 
   --igriz-elements-loader-background: theme('colors.alpha.gray.10');
-  --igriz-elements-loader-progress: theme('colors.accent.500');
+  --igriz-elements-loader-progress: var(--igriz-accent-500);
 
   --igriz-elements-artifacts-background: theme('colors.white');
   --igriz-elements-artifacts-backgroundHover: theme('colors.alpha.gray.2');
@@ -50,7 +84,7 @@
   --igriz-elements-actions-code-background: theme('colors.gray.800');
 
   --igriz-elements-messages-background: theme('colors.gray.100');
-  --igriz-elements-messages-linkColor: theme('colors.accent.500');
+  --igriz-elements-messages-linkColor: var(--igriz-accent-500);
   --igriz-elements-messages-code-background: theme('colors.gray.800');
   --igriz-elements-messages-inlineCode-background: theme('colors.gray.200');
   --igriz-elements-messages-inlineCode-text: theme('colors.gray.800');
@@ -66,9 +100,9 @@
   --igriz-elements-prompt-background: theme('colors.alpha.white.80');
 
   --igriz-elements-sidebar-dropdownShadow: theme('colors.alpha.gray.10');
-  --igriz-elements-sidebar-buttonBackgroundDefault: theme('colors.alpha.accent.10');
-  --igriz-elements-sidebar-buttonBackgroundHover: theme('colors.alpha.accent.20');
-  --igriz-elements-sidebar-buttonText: theme('colors.accent.700');
+  --igriz-elements-sidebar-buttonBackgroundDefault: var(--igriz-accent-alpha-10);
+  --igriz-elements-sidebar-buttonBackgroundHover: var(--igriz-accent-alpha-20);
+  --igriz-elements-sidebar-buttonText: var(--igriz-accent-700);
 
   --igriz-elements-preview-addressBar-background: theme('colors.gray.100');
   --igriz-elements-preview-addressBar-backgroundHover: theme('colors.alpha.gray.5');
@@ -110,7 +144,7 @@
 :root,
 :root[data-theme='dark'] {
   --igriz-elements-borderColor: theme('colors.alpha.white.10');
-  --igriz-elements-borderColorActive: theme('colors.accent.500');
+  --igriz-elements-borderColorActive: var(--igriz-accent-500);
 
   --igriz-elements-bg-depth-1: theme('colors.gray.950');
   --igriz-elements-bg-depth-2: theme('colors.gray.900');
@@ -124,9 +158,9 @@
   --igriz-elements-code-background: theme('colors.gray.800');
   --igriz-elements-code-text: theme('colors.white');
 
-  --igriz-elements-button-primary-background: theme('colors.alpha.accent.10');
-  --igriz-elements-button-primary-backgroundHover: theme('colors.alpha.accent.20');
-  --igriz-elements-button-primary-text: theme('colors.accent.500');
+  --igriz-elements-button-primary-background: var(--igriz-accent-alpha-10);
+  --igriz-elements-button-primary-backgroundHover: var(--igriz-accent-alpha-20);
+  --igriz-elements-button-primary-text: var(--igriz-accent-500);
 
   --igriz-elements-button-secondary-background: theme('colors.alpha.white.5');
   --igriz-elements-button-secondary-backgroundHover: theme('colors.alpha.white.10');
@@ -138,15 +172,15 @@
 
   --igriz-elements-item-contentDefault: theme('colors.alpha.white.50');
   --igriz-elements-item-contentActive: theme('colors.white');
-  --igriz-elements-item-contentAccent: theme('colors.accent.500');
+  --igriz-elements-item-contentAccent: var(--igriz-accent-500);
   --igriz-elements-item-contentDanger: theme('colors.red.500');
   --igriz-elements-item-backgroundDefault: rgba(255, 255, 255, 0);
   --igriz-elements-item-backgroundActive: theme('colors.alpha.white.10');
-  --igriz-elements-item-backgroundAccent: theme('colors.alpha.accent.10');
+  --igriz-elements-item-backgroundAccent: var(--igriz-accent-alpha-10);
   --igriz-elements-item-backgroundDanger: theme('colors.alpha.red.10');
 
   --igriz-elements-loader-background: theme('colors.alpha.gray.10');
-  --igriz-elements-loader-progress: theme('colors.accent.500');
+  --igriz-elements-loader-progress: var(--igriz-accent-500);
 
   --igriz-elements-artifacts-background: theme('colors.gray.900');
   --igriz-elements-artifacts-backgroundHover: theme('colors.alpha.white.5');
@@ -158,7 +192,7 @@
   --igriz-elements-actions-code-background: theme('colors.gray.800');
 
   --igriz-elements-messages-background: theme('colors.gray.800');
-  --igriz-elements-messages-linkColor: theme('colors.accent.500');
+  --igriz-elements-messages-linkColor: var(--igriz-accent-500);
   --igriz-elements-messages-code-background: theme('colors.gray.900');
   --igriz-elements-messages-inlineCode-background: theme('colors.gray.700');
   --igriz-elements-messages-inlineCode-text: var(--igriz-elements-textPrimary);
@@ -174,9 +208,9 @@
   --igriz-elements-prompt-background: theme('colors.alpha.gray.80');
 
   --igriz-elements-sidebar-dropdownShadow: theme('colors.alpha.gray.30');
-  --igriz-elements-sidebar-buttonBackgroundDefault: theme('colors.alpha.accent.10');
-  --igriz-elements-sidebar-buttonBackgroundHover: theme('colors.alpha.accent.20');
-  --igriz-elements-sidebar-buttonText: theme('colors.accent.500');
+  --igriz-elements-sidebar-buttonBackgroundDefault: var(--igriz-accent-alpha-10);
+  --igriz-elements-sidebar-buttonBackgroundHover: var(--igriz-accent-alpha-20);
+  --igriz-elements-sidebar-buttonText: var(--igriz-accent-500);
 
   --igriz-elements-preview-addressBar-background: var(--igriz-elements-bg-depth-1);
   --igriz-elements-preview-addressBar-backgroundHover: theme('colors.alpha.white.5');

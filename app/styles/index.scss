@@ -16,19 +16,24 @@
   font-display: swap;
 }
 
+:root {
+  --igriz-font-sans: 'Space Grotesk', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --igriz-font-display: 'Monorama', 'Space Grotesk', 'Inter', sans-serif;
+}
+
 html,
 body {
   height: 100%;
   width: 100%;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: var(--igriz-font-sans);
   background-color: var(--igriz-elements-bg-depth-1);
 }
 
 :root {
   --gradient-opacity: 0.8;
-  --primary-color: rgba(158, 117, 240, var(--gradient-opacity));
-  --secondary-color: rgba(138, 43, 226, var(--gradient-opacity));
-  --accent-color: rgba(128, 59, 239, var(--gradient-opacity));
+  --primary-color: color-mix(in srgb, var(--igriz-accent-500), transparent 32%);
+  --secondary-color: color-mix(in srgb, var(--igriz-accent-600), transparent 42%);
+  --accent-color: color-mix(in srgb, var(--igriz-accent-700), transparent 54%);
   // --primary-color: rgba(147, 112, 219, var(--gradient-opacity));
   // --secondary-color: rgba(138, 43, 226, var(--gradient-opacity));
   // --accent-color: rgba(180, 170, 220, var(--gradient-opacity));
@@ -80,4 +85,37 @@ body {
 
   // Firefox support for inverted colors
   scrollbar-color: color-mix(in srgb, var(--igriz-elements-textPrimary), transparent 50%) transparent;
+}
+
+.audit-scrollbar {
+  scrollbar-gutter: stable;
+
+  &::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #121317;
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.34);
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+    min-height: 36px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(255, 255, 255, 0.56);
+  }
+
+  &::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.56) #121317;
 }

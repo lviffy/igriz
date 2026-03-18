@@ -68,8 +68,8 @@ export function HistoryItem({
   return (
     <div
       className={classNames(
-        'group rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50/80 dark:hover:bg-gray-800/30 overflow-hidden flex justify-between items-center px-3 py-2 transition-colors',
-        { 'text-gray-900 dark:text-white bg-gray-50/80 dark:bg-gray-800/30': isActiveChat },
+        'group rounded-lg text-sm text-igriz-elements-textSecondary hover:text-igriz-elements-textPrimary hover:bg-igriz-elements-item-backgroundActive overflow-hidden flex justify-between items-center px-3 py-2 transition-theme',
+        { 'text-igriz-elements-textPrimary bg-igriz-elements-item-backgroundActive': isActiveChat },
         { 'cursor-pointer': selectionMode },
       )}
       onClick={selectionMode ? handleItemClick : undefined}
@@ -89,7 +89,7 @@ export function HistoryItem({
         <form onSubmit={handleSubmit} className="flex-1 flex items-center gap-2">
           <input
             type="text"
-            className="flex-1 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-md px-3 py-1.5 text-sm border border-gray-200 dark:border-gray-800 focus:outline-none focus:ring-1 focus:ring-purple-500/50"
+            className="flex-1 bg-igriz-elements-background-depth-1 text-igriz-elements-textPrimary rounded-md px-3 py-1.5 text-sm border border-igriz-elements-borderColor focus:outline-none focus:ring-1 focus:ring-[var(--igriz-elements-borderColorActive)]"
             autoFocus
             value={currentDescription}
             onChange={handleChange}
@@ -98,7 +98,7 @@ export function HistoryItem({
           />
           <button
             type="submit"
-            className="i-ph:check h-4 w-4 text-gray-500 hover:text-purple-500 transition-colors"
+            className="i-ph:check h-4 w-4 text-igriz-elements-textSecondary hover:text-[var(--igriz-accent-500)] transition-theme"
             onMouseDown={handleSubmit}
           />
         </form>
@@ -116,7 +116,7 @@ export function HistoryItem({
               'absolute right-0 top-0 bottom-0 flex items-center bg-transparent px-2 transition-colors',
             )}
           >
-            <div className="flex items-center gap-2.5 text-gray-400 dark:text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="flex items-center gap-2.5 text-igriz-elements-textTertiary opacity-0 group-hover:opacity-100 transition-opacity">
               <ChatActionButton
                 toolTipContent="Export"
                 icon="i-ph:download-simple h-4 w-4"
@@ -146,7 +146,7 @@ export function HistoryItem({
               <ChatActionButton
                 toolTipContent="Delete"
                 icon="i-ph:trash h-4 w-4"
-                className="hover:text-red-500 dark:hover:text-red-400"
+                className="hover:text-red-500"
                 onClick={handleDeleteClick}
               />
             </div>
@@ -178,7 +178,7 @@ const ChatActionButton = forwardRef(
         <button
           ref={ref}
           type="button"
-          className={`text-gray-400 dark:text-gray-500 hover:text-purple-500 dark:hover:text-purple-400 transition-colors ${icon} ${className ? className : ''}`}
+          className={`text-igriz-elements-textTertiary hover:text-[var(--igriz-accent-500)] transition-theme ${icon} ${className ? className : ''}`}
           onClick={onClick}
         />
       </WithTooltip>

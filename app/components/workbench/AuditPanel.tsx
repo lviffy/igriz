@@ -326,7 +326,7 @@ export function AuditPanel({ isStreaming }: AuditPanelProps) {
       </div>
 
       {expanded && (
-        <div className="px-3 py-3 space-y-3 max-h-80 overflow-y-auto">
+        <div className="px-3 py-3 space-y-3 max-h-80 overflow-y-auto audit-scrollbar">
           <div className="rounded-md border border-igriz-elements-borderColor bg-igriz-elements-background-depth-1 px-2.5 py-2 text-[11px] text-igriz-elements-textTertiary truncate">
             Source: {auditState.sourceFile ?? 'Unknown contract'}
           </div>

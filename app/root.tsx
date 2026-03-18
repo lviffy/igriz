@@ -3,6 +3,7 @@ import type { LinksFunction } from '@remix-run/cloudflare';
 import { Links, Meta, Outlet, Scripts, ScrollRestoration } from '@remix-run/react';
 import tailwindReset from '@unocss/reset/tailwind-compat.css?url';
 import { themeStore } from './lib/stores/theme';
+import { accentThemeStore } from './lib/stores/accentTheme';
 import { stripIndents } from './utils/stripIndent';
 import { createHead } from 'remix-island';
 import { useEffect } from 'react';
@@ -50,12 +51,13 @@ export const links: LinksFunction = () => [
   },
   {
     rel: 'stylesheet',
-    href: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',
+    href: 'https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap',
   },
 ];
 
 const inlineThemeCode = stripIndents`
   setTutorialKitTheme();
+  setIgrizAccentTheme();
 
   function setTutorialKitTheme() {
     let theme = localStorage.getItem('igriz_theme');
@@ -65,6 +67,14 @@ const inlineThemeCode = stripIndents`
     }
 
     document.querySelector('html')?.setAttribute('data-theme', theme);
+  }
+
+  function setIgrizAccentTheme() {
+    const validAccentThemes = ['ember', 'ocean', 'emerald', 'sunset'];
+    const savedAccentTheme = localStorage.getItem('igriz_accent_theme');
+    const accentTheme = validAccentThemes.includes(savedAccentTheme || '') ? savedAccentTheme : 'ember';
+
+    document.querySelector('html')?.setAttribute('data-accent', accentTheme || 'ember');
   }
 `;
 
@@ -80,10 +90,15 @@ export const Head = createHead(() => (
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const theme = useStore(themeStore);
+  const accentTheme = useStore(accentThemeStore);
 
   useEffect(() => {
     document.querySelector('html')?.setAttribute('data-theme', theme);
   }, [theme]);
+
+  useEffect(() => {
+    document.querySelector('html')?.setAttribute('data-accent', accentTheme);
+  }, [accentTheme]);
 
   return (
     <>

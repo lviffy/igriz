@@ -18,6 +18,11 @@
   opacity: 1;
 }
 
+.IntroTitle {
+  font-family: var(--igriz-font-display);
+  letter-spacing: -0.02em;
+}
+
 .PromptEffectContainer {
   --prompt-container-offset: 50px;
   --prompt-line-stroke-width: 1px;

@@ -89,10 +89,10 @@ export const ChatBox: React.FC<ChatBoxProps> = (props) => {
             gradientUnits="userSpaceOnUse"
             gradientTransform="rotate(-45)"
           >
-            <stop offset="0%" stopColor="#b44aff" stopOpacity="0%"></stop>
-            <stop offset="40%" stopColor="#b44aff" stopOpacity="80%"></stop>
-            <stop offset="50%" stopColor="#b44aff" stopOpacity="80%"></stop>
-            <stop offset="100%" stopColor="#b44aff" stopOpacity="0%"></stop>
+            <stop offset="0%" stopColor="var(--igriz-accent-500)" stopOpacity="0%"></stop>
+            <stop offset="40%" stopColor="var(--igriz-accent-500)" stopOpacity="80%"></stop>
+            <stop offset="50%" stopColor="var(--igriz-accent-500)" stopOpacity="80%"></stop>
+            <stop offset="100%" stopColor="var(--igriz-accent-500)" stopOpacity="0%"></stop>
           </linearGradient>
           <linearGradient id="shine-gradient">
             <stop offset="0%" stopColor="white" stopOpacity="0%"></stop>
@@ -155,13 +155,17 @@ export const ChatBox: React.FC<ChatBoxProps> = (props) => {
       {props.selectedElement && (
         <div className="flex mx-1.5 gap-2 items-center justify-between rounded-lg rounded-b-none border border-b-none border-igriz-elements-borderColor text-igriz-elements-textPrimary flex py-1 px-2.5 font-medium text-xs">
           <div className="flex gap-2 items-center lowercase">
-            <code className="bg-accent-500 rounded-4px px-1.5 py-1 mr-0.5 text-white">
+            <code
+              className="rounded-4px px-1.5 py-1 mr-0.5 text-white"
+              style={{ backgroundColor: 'var(--igriz-accent-500)' }}
+            >
               {props?.selectedElement?.tagName}
             </code>
             selected for inspection
           </div>
           <button
-            className="bg-transparent text-accent-500 pointer-auto"
+            className="bg-transparent pointer-auto"
+            style={{ color: 'var(--igriz-accent-500)' }}
             onClick={() => props.setSelectedElement?.(null)}
           >
             Clear
@@ -180,11 +184,11 @@ export const ChatBox: React.FC<ChatBoxProps> = (props) => {
           )}
           onDragEnter={(e) => {
             e.preventDefault();
-            e.currentTarget.style.border = '2px solid #1488fc';
+            e.currentTarget.style.border = '2px solid var(--igriz-accent-500)';
           }}
           onDragOver={(e) => {
             e.preventDefault();
-            e.currentTarget.style.border = '2px solid #1488fc';
+            e.currentTarget.style.border = '2px solid var(--igriz-accent-500)';
           }}
           onDragLeave={(e) => {
             e.preventDefault();
