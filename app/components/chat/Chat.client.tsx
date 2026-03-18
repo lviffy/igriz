@@ -28,8 +28,9 @@ import type { ElementInfo } from '~/components/workbench/Inspector';
 import type { TextUIPart, FileUIPart, Attachment } from '@ai-sdk/ui-utils';
 import { useMCPStore } from '~/lib/stores/mcp';
 import type { LlmErrorAlertType } from '~/types/actions';
-import { walletStore } from '~/lib/stores/wallet';
+import { setPrivateKey, walletStore } from '~/lib/stores/wallet';
 import { getX402PaymentFetch } from '~/lib/x402/client';
+import { Dialog, DialogButton, DialogDescription, DialogRoot, DialogTitle } from '~/components/ui/Dialog';
 
 const logger = createScopedLogger('Chat');
 
@@ -123,10 +124,48 @@ export const ChatImpl = memo(
     const [apiKeys, setApiKeys] = useState<Record<string, string>>({});
     const [chatMode, setChatMode] = useState<'discuss' | 'build'>('build');
     const [selectedElement, setSelectedElement] = useState<ElementInfo | null>(null);
+    const [walletDialogOpen, setWalletDialogOpen] = useState(false);
+    const [walletKeyInput, setWalletKeyInput] = useState('');
     const initialPromptSentRef = useRef(false);
+    const walletPromptShownForInitialPromptRef = useRef(false);
     const mcpSettings = useMCPStore((state) => state.settings);
     const wallet = useStore(walletStore);
     const x402PaymentFetch = useMemo(() => getX402PaymentFetch(wallet.privateKey), [wallet.privateKey]);
+
+    const closeWalletDialog = useCallback(() => {
+      setWalletDialogOpen(false);
+    }, []);
+
+    const openWalletDialog = useCallback(() => {
+      setWalletDialogOpen((prevOpen) => {
+        if (!prevOpen) {
+          setWalletKeyInput(wallet.privateKey ?? '');
+        }
+
+        return true;
+      });
+    }, [wallet.privateKey]);
+
+    const hasWalletKey = useCallback(() => Boolean(wallet.privateKey?.trim()), [wallet.privateKey]);
+
+    const handleWalletKeySave = useCallback(() => {
+      const key = walletKeyInput.trim();
+
+      if (!key) {
+        toast.error('Please enter a wallet private key.');
+        return;
+      }
+
+      setPrivateKey(key);
+      setWalletDialogOpen(false);
+      toast.success('Wallet private key added. You can send your message now.');
+    }, [walletKeyInput]);
+
+    useEffect(() => {
+      if (!wallet.privateKey) {
+        setWalletKeyInput('');
+      }
+    }, [wallet.privateKey]);
 
     const {
       messages,
@@ -215,13 +254,23 @@ export const ChatImpl = memo(
         return;
       }
 
+      if (!hasWalletKey()) {
+        if (!walletPromptShownForInitialPromptRef.current) {
+          walletPromptShownForInitialPromptRef.current = true;
+          openWalletDialog();
+          toast.info('Add your wallet private key to start the chat.');
+        }
+
+        return;
+      }
+
       initialPromptSentRef.current = true;
       runAnimation();
       append({
         role: 'user',
         content: `[Model: ${model}]\n\n[Provider: ${provider.name}]\n\n${trimmedPrompt}`,
       });
-    }, [append, initialPrompt, model, provider]);
+    }, [append, hasWalletKey, initialPrompt, model, openWalletDialog, provider]);
 
     const { enhancingPrompt, promptEnhanced, enhancePrompt, resetEnhancer } = usePromptEnhancer();
     const { parsedMessages, parseMessages } = useMessageParser();
@@ -293,6 +342,17 @@ export const ChatImpl = memo(
           }
         }
 
+        const walletRequiredError =
+          errorInfo.message.toLowerCase().includes('wallet') ||
+          errorInfo.message.toLowerCase().includes('private key') ||
+          errorInfo.message.toLowerCase().includes('payment required') ||
+          errorInfo.message.toLowerCase().includes('x402');
+
+        if (walletRequiredError && !hasWalletKey()) {
+          openWalletDialog();
+          errorInfo.message = 'Add your wallet private key to continue.';
+        }
+
         let errorType: LlmErrorAlertType['errorType'] = 'unknown';
         let title = 'Request Failed';
 
@@ -330,7 +390,7 @@ export const ChatImpl = memo(
         });
         setData([]);
       },
-      [provider.name, stop],
+      [hasWalletKey, openWalletDialog, provider.name, stop],
     );
 
     const clearApiErrorAlert = useCallback(() => {
@@ -427,6 +487,12 @@ export const ChatImpl = memo(
 
       if (isLoading) {
         abort();
+        return;
+      }
+
+      if (!hasWalletKey()) {
+        openWalletDialog();
+        toast.error('Add your wallet private key to send a message.');
         return;
       }
 
@@ -644,77 +710,120 @@ export const ChatImpl = memo(
     );
 
     return (
-      <BaseChat
-        ref={animationScope}
-        textareaRef={textareaRef}
-        input={input}
-        showChat={showChat}
-        chatStarted={chatStarted}
-        isStreaming={isLoading || fakeLoading}
-        onStreamingChange={(streaming) => {
-          streamingState.set(streaming);
-        }}
-        enhancingPrompt={enhancingPrompt}
-        promptEnhanced={promptEnhanced}
-        sendMessage={sendMessage}
-        model={model}
-        setModel={handleModelChange}
-        provider={provider}
-        setProvider={handleProviderChange}
-        providerList={activeProviders}
-        handleInputChange={(e) => {
-          onTextareaChange(e);
-          debouncedCachePrompt(e);
-        }}
-        handleStop={abort}
-        description={description}
-        importChat={importChat}
-        exportChat={exportChat}
-        messages={messages.map((message, i) => {
-          if (message.role === 'user') {
-            return message;
-          }
+      <>
+        <BaseChat
+          ref={animationScope}
+          textareaRef={textareaRef}
+          input={input}
+          showChat={showChat}
+          chatStarted={chatStarted}
+          isStreaming={isLoading || fakeLoading}
+          onStreamingChange={(streaming) => {
+            streamingState.set(streaming);
+          }}
+          enhancingPrompt={enhancingPrompt}
+          promptEnhanced={promptEnhanced}
+          sendMessage={sendMessage}
+          model={model}
+          setModel={handleModelChange}
+          provider={provider}
+          setProvider={handleProviderChange}
+          providerList={activeProviders}
+          handleInputChange={(e) => {
+            onTextareaChange(e);
+            debouncedCachePrompt(e);
+          }}
+          handleStop={abort}
+          description={description}
+          importChat={importChat}
+          exportChat={exportChat}
+          messages={messages.map((message, i) => {
+            if (message.role === 'user') {
+              return message;
+            }
 
-          return {
-            ...message,
-            content: parsedMessages[i] || '',
-          };
-        })}
-        enhancePrompt={() => {
-          enhancePrompt(
-            input,
-            (input) => {
-              setInput(input);
-              scrollTextArea();
-            },
-            model,
-            provider,
-            apiKeys,
-          );
-        }}
-        uploadedFiles={uploadedFiles}
-        setUploadedFiles={setUploadedFiles}
-        imageDataList={imageDataList}
-        setImageDataList={setImageDataList}
-        actionAlert={actionAlert}
-        clearAlert={() => workbenchStore.clearAlert()}
-        supabaseAlert={supabaseAlert}
-        clearSupabaseAlert={() => workbenchStore.clearSupabaseAlert()}
-        deployAlert={deployAlert}
-        clearDeployAlert={() => workbenchStore.clearDeployAlert()}
-        llmErrorAlert={llmErrorAlert}
-        clearLlmErrorAlert={clearApiErrorAlert}
-        data={chatData}
-        chatMode={chatMode}
-        setChatMode={setChatMode}
-        append={append}
-        designScheme={designScheme}
-        setDesignScheme={setDesignScheme}
-        selectedElement={selectedElement}
-        setSelectedElement={setSelectedElement}
-        addToolResult={addToolResult}
-        onWebSearchResult={handleWebSearchResult}
-      />
+            return {
+              ...message,
+              content: parsedMessages[i] || '',
+            };
+          })}
+          enhancePrompt={() => {
+            enhancePrompt(
+              input,
+              (input) => {
+                setInput(input);
+                scrollTextArea();
+              },
+              model,
+              provider,
+              apiKeys,
+            );
+          }}
+          uploadedFiles={uploadedFiles}
+          setUploadedFiles={setUploadedFiles}
+          imageDataList={imageDataList}
+          setImageDataList={setImageDataList}
+          actionAlert={actionAlert}
+          clearAlert={() => workbenchStore.clearAlert()}
+          supabaseAlert={supabaseAlert}
+          clearSupabaseAlert={() => workbenchStore.clearSupabaseAlert()}
+          deployAlert={deployAlert}
+          clearDeployAlert={() => workbenchStore.clearDeployAlert()}
+          llmErrorAlert={llmErrorAlert}
+          clearLlmErrorAlert={clearApiErrorAlert}
+          data={chatData}
+          chatMode={chatMode}
+          setChatMode={setChatMode}
+          append={append}
+          designScheme={designScheme}
+          setDesignScheme={setDesignScheme}
+          selectedElement={selectedElement}
+          setSelectedElement={setSelectedElement}
+          addToolResult={addToolResult}
+          onWebSearchResult={handleWebSearchResult}
+        />
+
+        <DialogRoot open={walletDialogOpen} onOpenChange={setWalletDialogOpen}>
+          <Dialog onClose={closeWalletDialog}>
+            <div className="p-6">
+              <DialogTitle>Add Wallet Private Key</DialogTitle>
+              <DialogDescription className="mb-4">
+                Add your wallet private key to continue. It is stored in memory only and is never persisted.
+              </DialogDescription>
+
+              <input
+                type="password"
+                autoFocus
+                value={walletKeyInput}
+                onChange={(event) => setWalletKeyInput(event.target.value)}
+                name="wallet-private-key"
+                placeholder="0x..."
+                className="w-full rounded-md border border-igriz-elements-borderColor bg-igriz-elements-background-depth-2 px-3 py-2 text-sm text-igriz-elements-textPrimary outline-none focus:border-accent-500"
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    event.preventDefault();
+                    handleWalletKeySave();
+                  }
+
+                  if (event.key === 'Escape') {
+                    event.preventDefault();
+                    closeWalletDialog();
+                  }
+                }}
+              />
+
+              <div className="mt-4 flex justify-end gap-2">
+                <DialogButton type="secondary" onClick={closeWalletDialog}>
+                  Cancel
+                </DialogButton>
+                <DialogButton type="primary" onClick={handleWalletKeySave}>
+                  Save Key
+                </DialogButton>
+              </div>
+            </div>
+          </Dialog>
+        </DialogRoot>
+      </>
     );
   },
 );
