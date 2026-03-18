@@ -1,5 +1,5 @@
 import { ClientOnly } from 'remix-utils/client-only';
-import { useMemo, useState, useEffect, useRef } from 'react';
+import { memo, useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import { Menu } from '~/components/sidebar/Menu.client';
 import { WalletButton } from '~/components/wallet/WalletButton';
 import { useSettings } from '~/lib/hooks/useSettings';
@@ -12,8 +12,123 @@ import Cookies from 'js-cookie';
 import { LOCAL_PROVIDERS } from '~/lib/stores/settings';
 import { toast } from 'react-toastify';
 import { WebSearch } from '~/components/chat/WebSearch.client';
+import { defaultDesignScheme } from '~/types/design-scheme';
+
+interface LandingPageProps {
+  onLaunch?: (prompt?: string) => void;
+}
 
 const LANDING_PALETTE_KEY = 'igriz_landing_palette';
+const BUILDER_COLOR_PALETTE_KEY = 'igriz_builder_color_palette';
+
+type BuilderColorPalette = {
+  primary: string;
+  secondary: string;
+  accent: string;
+  background: string;
+  text: string;
+};
+
+type BuilderPalettePreset = {
+  id: string;
+  name: string;
+  palette: BuilderColorPalette;
+};
+
+const defaultBuilderPalette: BuilderColorPalette = {
+  primary: defaultDesignScheme.palette.primary,
+  secondary: defaultDesignScheme.palette.secondary,
+  accent: defaultDesignScheme.palette.accent,
+  background: defaultDesignScheme.palette.background,
+  text: defaultDesignScheme.palette.text,
+};
+
+const BUILDER_COLOR_FIELDS: Array<[keyof BuilderColorPalette, string]> = [
+  ['primary', 'Primary'],
+  ['secondary', 'Secondary'],
+  ['accent', 'Accent'],
+  ['background', 'Background'],
+  ['text', 'Text'],
+];
+
+const BUILDER_COLOR_PRESETS: BuilderPalettePreset[] = [
+  {
+    id: 'arctic-saas',
+    name: 'Arctic SaaS',
+    palette: {
+      primary: '#2563eb',
+      secondary: '#38bdf8',
+      accent: '#0ea5e9',
+      background: '#f8fafc',
+      text: '#0f172a',
+    },
+  },
+  {
+    id: 'midnight-neon',
+    name: 'Midnight Neon',
+    palette: {
+      primary: '#7c3aed',
+      secondary: '#06b6d4',
+      accent: '#22d3ee',
+      background: '#0b1020',
+      text: '#e2e8f0',
+    },
+  },
+  {
+    id: 'warm-editorial',
+    name: 'Warm Editorial',
+    palette: {
+      primary: '#b45309',
+      secondary: '#f59e0b',
+      accent: '#f97316',
+      background: '#fff7ed',
+      text: '#3f2a13',
+    },
+  },
+  {
+    id: 'forest-product',
+    name: 'Forest Product',
+    palette: {
+      primary: '#166534',
+      secondary: '#10b981',
+      accent: '#34d399',
+      background: '#f0fdf4',
+      text: '#052e16',
+    },
+  },
+  {
+    id: 'charcoal-lux',
+    name: 'Charcoal Lux',
+    palette: {
+      primary: '#111827',
+      secondary: '#374151',
+      accent: '#f59e0b',
+      background: '#030712',
+      text: '#f9fafb',
+    },
+  },
+  {
+    id: 'rose-creative',
+    name: 'Rose Creative',
+    palette: {
+      primary: '#db2777',
+      secondary: '#fb7185',
+      accent: '#f43f5e',
+      background: '#fff1f2',
+      text: '#4a1024',
+    },
+  },
+];
+
+function paletteEquals(a: BuilderColorPalette, b: BuilderColorPalette): boolean {
+  return (
+    a.primary === b.primary &&
+    a.secondary === b.secondary &&
+    a.accent === b.accent &&
+    a.background === b.background &&
+    a.text === b.text
+  );
+}
 
 type LandingPalette = {
   id: string;
@@ -138,7 +253,80 @@ const USE_CASES = [
   },
 ];
 
-export function LandingPage() {
+const BuilderColorPalettePopover = memo(function BuilderColorPalettePopover({
+  initialPalette,
+  onApply,
+  onReset,
+}: {
+  initialPalette: BuilderColorPalette;
+  onApply: (palette: BuilderColorPalette) => void;
+  onReset: () => void;
+}) {
+  const [draftPalette, setDraftPalette] = useState<BuilderColorPalette>(initialPalette);
+
+  return (
+    <div className="landing-builder-palette-menu">
+      <div className="landing-palette-title">Builder colors</div>
+      <div className="landing-builder-presets">
+        <div className="landing-builder-presets-label">Quick presets</div>
+        <div className="landing-builder-presets-grid">
+          {BUILDER_COLOR_PRESETS.map((preset) => (
+            <button
+              key={preset.id}
+              type="button"
+              className={`landing-builder-preset-item${paletteEquals(draftPalette, preset.palette) ? ' active' : ''}`}
+              onClick={() => setDraftPalette(preset.palette)}
+            >
+              <span className="landing-builder-preset-name">{preset.name}</span>
+              <span className="landing-builder-preset-swatches" aria-hidden="true">
+                <span style={{ backgroundColor: preset.palette.primary }} />
+                <span style={{ backgroundColor: preset.palette.secondary }} />
+                <span style={{ backgroundColor: preset.palette.accent }} />
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+      {BUILDER_COLOR_FIELDS.map(([key, label]) => (
+        <label key={key} className="landing-builder-palette-row">
+          <span>{label}</span>
+          <input
+            type="color"
+            value={draftPalette[key]}
+            onChange={(event) => {
+              const value = event.target.value;
+              setDraftPalette((prev) => ({
+                ...prev,
+                [key]: value,
+              }));
+            }}
+          />
+        </label>
+      ))}
+      <div className="landing-builder-palette-actions">
+        <button
+          type="button"
+          className="landing-builder-palette-btn secondary"
+          onClick={() => {
+            setDraftPalette(defaultBuilderPalette);
+            onReset();
+          }}
+        >
+          Reset
+        </button>
+        <button
+          type="button"
+          className="landing-builder-palette-btn primary"
+          onClick={() => onApply(draftPalette)}
+        >
+          Apply
+        </button>
+      </div>
+    </div>
+  );
+});
+
+export function LandingPage({ onLaunch }: LandingPageProps) {
   const { activeProviders } = useSettings();
   const [prompt, setPrompt] = useState('');
   const [enhancingPrompt, setEnhancingPrompt] = useState(false);
@@ -146,8 +334,11 @@ export function LandingPage() {
   const [showModelSettings, setShowModelSettings] = useState(true);
   const [showPalettePicker, setShowPalettePicker] = useState(false);
   const [selectedPaletteId, setSelectedPaletteId] = useState('ember');
+  const [showBuilderColorPicker, setShowBuilderColorPicker] = useState(false);
+  const [builderPalette, setBuilderPalette] = useState<BuilderColorPalette>(defaultBuilderPalette);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const paletteRef = useRef<HTMLDivElement>(null);
+  const builderPaletteRef = useRef<HTMLDivElement>(null);
   const [apiKeys, setApiKeys] = useState<Record<string, string>>(getApiKeysFromCookies());
   const [modelList, setModelList] = useState<ModelInfo[]>([]);
   const [isModelLoading, setIsModelLoading] = useState<string | undefined>('all');
@@ -178,11 +369,35 @@ export function LandingPage() {
 
   useEffect(() => {
     try {
+      const storedBuilderPalette = localStorage.getItem(BUILDER_COLOR_PALETTE_KEY);
+
+      if (storedBuilderPalette) {
+        const parsed = JSON.parse(storedBuilderPalette) as Partial<BuilderColorPalette>;
+        setBuilderPalette((prev) => ({
+          ...prev,
+          ...parsed,
+        }));
+      }
+    } catch {
+      // Ignore localStorage access issues.
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
       localStorage.setItem(LANDING_PALETTE_KEY, selectedPaletteId);
     } catch {
       // Ignore localStorage access issues.
     }
   }, [selectedPaletteId]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(BUILDER_COLOR_PALETTE_KEY, JSON.stringify(builderPalette));
+    } catch {
+      // Ignore localStorage access issues.
+    }
+  }, [builderPalette]);
 
   useEffect(() => {
     if (!showPalettePicker) {
@@ -200,6 +415,23 @@ export function LandingPage() {
       document.removeEventListener('mousedown', handleOutsideClick);
     };
   }, [showPalettePicker]);
+
+  useEffect(() => {
+    if (!showBuilderColorPicker) {
+      return;
+    }
+
+    const handleOutsideClick = (event: MouseEvent) => {
+      if (builderPaletteRef.current && !builderPaletteRef.current.contains(event.target as Node)) {
+        setShowBuilderColorPicker(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+    };
+  }, [showBuilderColorPicker]);
 
   useEffect(() => {
     const providerNames = new Set(activeProviders.map((p) => p.name));
@@ -285,6 +517,29 @@ export function LandingPage() {
     return trimmed.length > 0 ? 'Build now' : 'Get Started';
   }, [prompt]);
 
+  const applyBuilderPalette = useCallback((palette: BuilderColorPalette) => {
+    setBuilderPalette(palette);
+    setShowBuilderColorPicker(false);
+    toast.success('Builder palette applied');
+  }, []);
+
+  const resetBuilderPalette = useCallback(() => {
+    setBuilderPalette(defaultBuilderPalette);
+    toast.success('Builder palette reset');
+  }, []);
+
+  const buildPalettePromptContext = () => {
+    return [
+      'Use this preferred color palette for the generated dApp UI:',
+      `- Primary: ${builderPalette.primary}`,
+      `- Secondary: ${builderPalette.secondary}`,
+      `- Accent: ${builderPalette.accent}`,
+      `- Background: ${builderPalette.background}`,
+      `- Text: ${builderPalette.text}`,
+      'Apply these colors consistently for buttons, backgrounds, links, and text hierarchy.',
+    ].join('\n');
+  };
+
   const handleEnhancePrompt = async () => {
     const input = prompt.trim();
 
@@ -302,7 +557,7 @@ export function LandingPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          message: input,
+          message: `${input}\n\n${buildPalettePromptContext()}`,
           model,
           provider,
         }),
@@ -330,6 +585,11 @@ export function LandingPage() {
   const handleFileUpload = () => {
     fileInputRef.current?.click();
   };
+
+  const handleLaunch = useCallback(() => {
+    const trimmedPrompt = prompt.trim();
+    onLaunch?.(trimmedPrompt.length > 0 ? trimmedPrompt : undefined);
+  }, [onLaunch, prompt]);
 
   return (
     <>
@@ -389,7 +649,7 @@ export function LandingPage() {
                 </div>
               )}
             </div>
-            <ClientOnly>{() => <WalletButton />}</ClientOnly>
+            <ClientOnly>{() => <WalletButton variant="landing" />}</ClientOnly>
             <a href="#hero-box" className="landing-nav-cta">
               Get Started
             </a>
@@ -461,6 +721,12 @@ export function LandingPage() {
               <textarea
                 value={prompt}
                 onChange={(event) => setPrompt(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' && !event.shiftKey) {
+                    event.preventDefault();
+                    handleLaunch();
+                  }
+                }}
                 className="landing-kept-textarea"
                 rows={4}
                 placeholder="How can igriz help you today?"
@@ -468,6 +734,23 @@ export function LandingPage() {
 
               <div className="landing-kept-actions">
                 <div className="landing-kept-tools">
+                  <div ref={builderPaletteRef} className="landing-palette-wrapper">
+                    <button
+                      type="button"
+                      className="landing-kept-icon"
+                      aria-label="Builder color palette"
+                      onClick={() => setShowBuilderColorPicker((open) => !open)}
+                    >
+                      <span className="i-ph:paint-brush" />
+                    </button>
+                    {showBuilderColorPicker && (
+                      <BuilderColorPalettePopover
+                        initialPalette={builderPalette}
+                        onApply={applyBuilderPalette}
+                        onReset={resetBuilderPalette}
+                      />
+                    )}
+                  </div>
                   <button
                     type="button"
                     className="landing-kept-icon"
@@ -503,16 +786,13 @@ export function LandingPage() {
                     <span className="i-ph:caret-down" />
                   </button>
                 </div>
-                <button type="button" className="landing-kept-send" aria-label="Send prompt">
-                  <span className="i-ph:lightning-fill" />
-                </button>
               </div>
             </div>
 
             <div className="landing-kept-cta-wrap">
-              <a href="#features" className="landing-btn-build">
+              <button type="button" className="landing-btn-build" onClick={handleLaunch}>
                 {ctaText} <span aria-hidden="true">▶</span>
-              </a>
+              </button>
             </div>
           </div>
 

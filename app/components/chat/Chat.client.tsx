@@ -33,7 +33,11 @@ import { getX402PaymentFetch } from '~/lib/x402/client';
 
 const logger = createScopedLogger('Chat');
 
-export function Chat() {
+interface ChatContainerProps {
+  initialPrompt?: string;
+}
+
+export function Chat({ initialPrompt }: ChatContainerProps) {
   renderLogger.trace('Chat');
 
   const { ready, initialMessages, storeMessageHistory, importChat, exportChat } = useChatHistory();
@@ -51,6 +55,7 @@ export function Chat() {
           exportChat={exportChat}
           storeMessageHistory={storeMessageHistory}
           importChat={importChat}
+          initialPrompt={initialPrompt}
         />
       )}
     </>
@@ -81,10 +86,11 @@ interface ChatProps {
   importChat: (description: string, messages: Message[]) => Promise<void>;
   exportChat: () => void;
   description?: string;
+  initialPrompt?: string;
 }
 
 export const ChatImpl = memo(
-  ({ description, initialMessages, storeMessageHistory, importChat, exportChat }: ChatProps) => {
+  ({ description, initialMessages, storeMessageHistory, importChat, exportChat, initialPrompt }: ChatProps) => {
     useShortcuts();
 
     const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -117,6 +123,7 @@ export const ChatImpl = memo(
     const [apiKeys, setApiKeys] = useState<Record<string, string>>({});
     const [chatMode, setChatMode] = useState<'discuss' | 'build'>('build');
     const [selectedElement, setSelectedElement] = useState<ElementInfo | null>(null);
+    const initialPromptSentRef = useRef(false);
     const mcpSettings = useMCPStore((state) => state.settings);
     const wallet = useStore(walletStore);
     const x402PaymentFetch = useMemo(() => getX402PaymentFetch(wallet.privateKey), [wallet.privateKey]);
@@ -196,6 +203,25 @@ export const ChatImpl = memo(
         });
       }
     }, [model, provider, searchParams]);
+
+    useEffect(() => {
+      if (!initialPrompt || initialPromptSentRef.current) {
+        return;
+      }
+
+      const trimmedPrompt = initialPrompt.trim();
+
+      if (!trimmedPrompt) {
+        return;
+      }
+
+      initialPromptSentRef.current = true;
+      runAnimation();
+      append({
+        role: 'user',
+        content: `[Model: ${model}]\n\n[Provider: ${provider.name}]\n\n${trimmedPrompt}`,
+      });
+    }, [append, initialPrompt, model, provider]);
 
     const { enhancingPrompt, promptEnhanced, enhancePrompt, resetEnhancer } = usePromptEnhancer();
     const { parsedMessages, parseMessages } = useMessageParser();
