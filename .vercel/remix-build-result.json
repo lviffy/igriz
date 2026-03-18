@@ -1,0 +1,614 @@
+{
+  "buildManifest": {
+    "serverBundles": {
+      "nodejs-eyJydW50aW1lIjoibm9kZWpzIn0": {
+        "id": "nodejs-eyJydW50aW1lIjoibm9kZWpzIn0",
+        "file": "build/server/nodejs-eyJydW50aW1lIjoibm9kZWpzIn0/index.js",
+        "config": {
+          "runtime": "nodejs"
+        }
+      }
+    },
+    "routeIdToServerBundleId": {
+      "routes/[.]well-known.appspecific.com[.]chrome[.]devtools[.]json": "nodejs-eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/api.configured-providers": "nodejs-eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/webcontainer.connect.$id": "nodejs-eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/webcontainer.preview.$id": "nodejs-eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/api.supabase.variables": "nodejs-eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/api.system.diagnostics": "nodejs-eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/api.mcp-update-config": "nodejs-eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/api.models.$provider": "nodejs-eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/api.system.disk-info": "nodejs-eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/api.export-api-keys": "nodejs-eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/api.github-branches": "nodejs-eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/api.github-template": "nodejs-eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/api.system.git-info": "nodejs-eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/api.supabase.query": "nodejs-eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/api.check-env-key": "nodejs-eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/api.supabase-user": "nodejs-eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/api.vercel-deploy": "nodejs-eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/api.git-proxy.$": "nodejs-eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/api.github-user": "nodejs-eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/api.vercel-user": "nodejs-eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/api.web-search": "nodejs-eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/api.audit-fix": "nodejs-eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/api.mcp-check": "nodejs-eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/api.enhancer": "nodejs-eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/api.git-info": "nodejs-eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/api.supabase": "nodejs-eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/api.llmcall": "nodejs-eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/api.health": "nodejs-eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/api.models": "nodejs-eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/api.update": "nodejs-eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/api.audit": "nodejs-eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/api.chat": "nodejs-eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/chat.$id": "nodejs-eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/_index": "nodejs-eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/git": "nodejs-eyJydW50aW1lIjoibm9kZWpzIn0"
+    },
+    "routes": {
+      "root": {
+        "path": "",
+        "id": "root",
+        "file": "app/root.tsx",
+        "config": {}
+      },
+      "routes/[.]well-known.appspecific.com[.]chrome[.]devtools[.]json": {
+        "file": "app/routes/[.]well-known.appspecific.com[.]chrome[.]devtools[.]json.ts",
+        "id": "routes/[.]well-known.appspecific.com[.]chrome[.]devtools[.]json",
+        "path": ".well-known/appspecific/com.chrome.devtools.json",
+        "parentId": "root",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/api.configured-providers": {
+        "file": "app/routes/api.configured-providers.ts",
+        "id": "routes/api.configured-providers",
+        "path": "api/configured-providers",
+        "parentId": "root",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/webcontainer.connect.$id": {
+        "file": "app/routes/webcontainer.connect.$id.tsx",
+        "id": "routes/webcontainer.connect.$id",
+        "path": "webcontainer/connect/:id",
+        "parentId": "root",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/webcontainer.preview.$id": {
+        "file": "app/routes/webcontainer.preview.$id.tsx",
+        "id": "routes/webcontainer.preview.$id",
+        "path": "webcontainer/preview/:id",
+        "parentId": "root",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/api.supabase.variables": {
+        "file": "app/routes/api.supabase.variables.ts",
+        "id": "routes/api.supabase.variables",
+        "path": "variables",
+        "parentId": "routes/api.supabase",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/api.system.diagnostics": {
+        "file": "app/routes/api.system.diagnostics.ts",
+        "id": "routes/api.system.diagnostics",
+        "path": "api/system/diagnostics",
+        "parentId": "root",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/api.mcp-update-config": {
+        "file": "app/routes/api.mcp-update-config.ts",
+        "id": "routes/api.mcp-update-config",
+        "path": "api/mcp-update-config",
+        "parentId": "root",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/api.models.$provider": {
+        "file": "app/routes/api.models.$provider.ts",
+        "id": "routes/api.models.$provider",
+        "path": ":provider",
+        "parentId": "routes/api.models",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/api.system.disk-info": {
+        "file": "app/routes/api.system.disk-info.ts",
+        "id": "routes/api.system.disk-info",
+        "path": "api/system/disk-info",
+        "parentId": "root",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/api.export-api-keys": {
+        "file": "app/routes/api.export-api-keys.ts",
+        "id": "routes/api.export-api-keys",
+        "path": "api/export-api-keys",
+        "parentId": "root",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/api.github-branches": {
+        "file": "app/routes/api.github-branches.ts",
+        "id": "routes/api.github-branches",
+        "path": "api/github-branches",
+        "parentId": "root",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/api.github-template": {
+        "file": "app/routes/api.github-template.ts",
+        "id": "routes/api.github-template",
+        "path": "api/github-template",
+        "parentId": "root",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/api.system.git-info": {
+        "file": "app/routes/api.system.git-info.ts",
+        "id": "routes/api.system.git-info",
+        "path": "api/system/git-info",
+        "parentId": "root",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/api.supabase.query": {
+        "file": "app/routes/api.supabase.query.ts",
+        "id": "routes/api.supabase.query",
+        "path": "query",
+        "parentId": "routes/api.supabase",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/api.check-env-key": {
+        "file": "app/routes/api.check-env-key.ts",
+        "id": "routes/api.check-env-key",
+        "path": "api/check-env-key",
+        "parentId": "root",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/api.supabase-user": {
+        "file": "app/routes/api.supabase-user.ts",
+        "id": "routes/api.supabase-user",
+        "path": "api/supabase-user",
+        "parentId": "root",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/api.vercel-deploy": {
+        "file": "app/routes/api.vercel-deploy.ts",
+        "id": "routes/api.vercel-deploy",
+        "path": "api/vercel-deploy",
+        "parentId": "root",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/api.git-proxy.$": {
+        "file": "app/routes/api.git-proxy.$.ts",
+        "id": "routes/api.git-proxy.$",
+        "path": "api/git-proxy/*",
+        "parentId": "root",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/api.github-user": {
+        "file": "app/routes/api.github-user.ts",
+        "id": "routes/api.github-user",
+        "path": "api/github-user",
+        "parentId": "root",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/api.vercel-user": {
+        "file": "app/routes/api.vercel-user.ts",
+        "id": "routes/api.vercel-user",
+        "path": "api/vercel-user",
+        "parentId": "root",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/api.web-search": {
+        "file": "app/routes/api.web-search.ts",
+        "id": "routes/api.web-search",
+        "path": "api/web-search",
+        "parentId": "root",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/api.audit-fix": {
+        "file": "app/routes/api.audit-fix.ts",
+        "id": "routes/api.audit-fix",
+        "path": "api/audit-fix",
+        "parentId": "root",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/api.mcp-check": {
+        "file": "app/routes/api.mcp-check.ts",
+        "id": "routes/api.mcp-check",
+        "path": "api/mcp-check",
+        "parentId": "root",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/api.enhancer": {
+        "file": "app/routes/api.enhancer.ts",
+        "id": "routes/api.enhancer",
+        "path": "api/enhancer",
+        "parentId": "root",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/api.git-info": {
+        "file": "app/routes/api.git-info.ts",
+        "id": "routes/api.git-info",
+        "path": "api/git-info",
+        "parentId": "root",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/api.supabase": {
+        "file": "app/routes/api.supabase.ts",
+        "id": "routes/api.supabase",
+        "path": "api/supabase",
+        "parentId": "root",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/api.llmcall": {
+        "file": "app/routes/api.llmcall.ts",
+        "id": "routes/api.llmcall",
+        "path": "api/llmcall",
+        "parentId": "root",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/api.health": {
+        "file": "app/routes/api.health.ts",
+        "id": "routes/api.health",
+        "path": "api/health",
+        "parentId": "root",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/api.models": {
+        "file": "app/routes/api.models.ts",
+        "id": "routes/api.models",
+        "path": "api/models",
+        "parentId": "root",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/api.update": {
+        "file": "app/routes/api.update.ts",
+        "id": "routes/api.update",
+        "path": "api/update",
+        "parentId": "root",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/api.audit": {
+        "file": "app/routes/api.audit.ts",
+        "id": "routes/api.audit",
+        "path": "api/audit",
+        "parentId": "root",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/api.chat": {
+        "file": "app/routes/api.chat.ts",
+        "id": "routes/api.chat",
+        "path": "api/chat",
+        "parentId": "root",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/chat.$id": {
+        "file": "app/routes/chat.$id.tsx",
+        "id": "routes/chat.$id",
+        "path": "chat/:id",
+        "parentId": "root",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/_index": {
+        "file": "app/routes/_index.tsx",
+        "id": "routes/_index",
+        "index": true,
+        "parentId": "root",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/git": {
+        "file": "app/routes/git.tsx",
+        "id": "routes/git",
+        "path": "git",
+        "parentId": "root",
+        "config": {
+          "runtime": "nodejs"
+        }
+      }
+    }
+  },
+  "remixConfig": {
+    "appDirectory": "/home/lviffy/Projects/POLKA/igriz-v2/app",
+    "basename": "/",
+    "buildDirectory": "/home/lviffy/Projects/POLKA/igriz-v2/build",
+    "future": {
+      "v3_fetcherPersist": true,
+      "v3_relativeSplatPath": true,
+      "v3_throwAbortReason": true,
+      "v3_routeConfig": false,
+      "v3_singleFetch": false,
+      "v3_lazyRouteDiscovery": true,
+      "unstable_optimizeDeps": false
+    },
+    "manifest": false,
+    "publicPath": "/",
+    "routes": {
+      "root": {
+        "path": "",
+        "id": "root",
+        "file": "root.tsx"
+      },
+      "routes/[.]well-known.appspecific.com[.]chrome[.]devtools[.]json": {
+        "file": "routes/[.]well-known.appspecific.com[.]chrome[.]devtools[.]json.ts",
+        "id": "routes/[.]well-known.appspecific.com[.]chrome[.]devtools[.]json",
+        "path": ".well-known/appspecific/com.chrome.devtools.json",
+        "parentId": "root"
+      },
+      "routes/api.configured-providers": {
+        "file": "routes/api.configured-providers.ts",
+        "id": "routes/api.configured-providers",
+        "path": "api/configured-providers",
+        "parentId": "root"
+      },
+      "routes/webcontainer.connect.$id": {
+        "file": "routes/webcontainer.connect.$id.tsx",
+        "id": "routes/webcontainer.connect.$id",
+        "path": "webcontainer/connect/:id",
+        "parentId": "root"
+      },
+      "routes/webcontainer.preview.$id": {
+        "file": "routes/webcontainer.preview.$id.tsx",
+        "id": "routes/webcontainer.preview.$id",
+        "path": "webcontainer/preview/:id",
+        "parentId": "root"
+      },
+      "routes/api.supabase.variables": {
+        "file": "routes/api.supabase.variables.ts",
+        "id": "routes/api.supabase.variables",
+        "path": "variables",
+        "parentId": "routes/api.supabase"
+      },
+      "routes/api.system.diagnostics": {
+        "file": "routes/api.system.diagnostics.ts",
+        "id": "routes/api.system.diagnostics",
+        "path": "api/system/diagnostics",
+        "parentId": "root"
+      },
+      "routes/api.mcp-update-config": {
+        "file": "routes/api.mcp-update-config.ts",
+        "id": "routes/api.mcp-update-config",
+        "path": "api/mcp-update-config",
+        "parentId": "root"
+      },
+      "routes/api.models.$provider": {
+        "file": "routes/api.models.$provider.ts",
+        "id": "routes/api.models.$provider",
+        "path": ":provider",
+        "parentId": "routes/api.models"
+      },
+      "routes/api.system.disk-info": {
+        "file": "routes/api.system.disk-info.ts",
+        "id": "routes/api.system.disk-info",
+        "path": "api/system/disk-info",
+        "parentId": "root"
+      },
+      "routes/api.export-api-keys": {
+        "file": "routes/api.export-api-keys.ts",
+        "id": "routes/api.export-api-keys",
+        "path": "api/export-api-keys",
+        "parentId": "root"
+      },
+      "routes/api.github-branches": {
+        "file": "routes/api.github-branches.ts",
+        "id": "routes/api.github-branches",
+        "path": "api/github-branches",
+        "parentId": "root"
+      },
+      "routes/api.github-template": {
+        "file": "routes/api.github-template.ts",
+        "id": "routes/api.github-template",
+        "path": "api/github-template",
+        "parentId": "root"
+      },
+      "routes/api.system.git-info": {
+        "file": "routes/api.system.git-info.ts",
+        "id": "routes/api.system.git-info",
+        "path": "api/system/git-info",
+        "parentId": "root"
+      },
+      "routes/api.supabase.query": {
+        "file": "routes/api.supabase.query.ts",
+        "id": "routes/api.supabase.query",
+        "path": "query",
+        "parentId": "routes/api.supabase"
+      },
+      "routes/api.check-env-key": {
+        "file": "routes/api.check-env-key.ts",
+        "id": "routes/api.check-env-key",
+        "path": "api/check-env-key",
+        "parentId": "root"
+      },
+      "routes/api.supabase-user": {
+        "file": "routes/api.supabase-user.ts",
+        "id": "routes/api.supabase-user",
+        "path": "api/supabase-user",
+        "parentId": "root"
+      },
+      "routes/api.vercel-deploy": {
+        "file": "routes/api.vercel-deploy.ts",
+        "id": "routes/api.vercel-deploy",
+        "path": "api/vercel-deploy",
+        "parentId": "root"
+      },
+      "routes/api.git-proxy.$": {
+        "file": "routes/api.git-proxy.$.ts",
+        "id": "routes/api.git-proxy.$",
+        "path": "api/git-proxy/*",
+        "parentId": "root"
+      },
+      "routes/api.github-user": {
+        "file": "routes/api.github-user.ts",
+        "id": "routes/api.github-user",
+        "path": "api/github-user",
+        "parentId": "root"
+      },
+      "routes/api.vercel-user": {
+        "file": "routes/api.vercel-user.ts",
+        "id": "routes/api.vercel-user",
+        "path": "api/vercel-user",
+        "parentId": "root"
+      },
+      "routes/api.web-search": {
+        "file": "routes/api.web-search.ts",
+        "id": "routes/api.web-search",
+        "path": "api/web-search",
+        "parentId": "root"
+      },
+      "routes/api.audit-fix": {
+        "file": "routes/api.audit-fix.ts",
+        "id": "routes/api.audit-fix",
+        "path": "api/audit-fix",
+        "parentId": "root"
+      },
+      "routes/api.mcp-check": {
+        "file": "routes/api.mcp-check.ts",
+        "id": "routes/api.mcp-check",
+        "path": "api/mcp-check",
+        "parentId": "root"
+      },
+      "routes/api.enhancer": {
+        "file": "routes/api.enhancer.ts",
+        "id": "routes/api.enhancer",
+        "path": "api/enhancer",
+        "parentId": "root"
+      },
+      "routes/api.git-info": {
+        "file": "routes/api.git-info.ts",
+        "id": "routes/api.git-info",
+        "path": "api/git-info",
+        "parentId": "root"
+      },
+      "routes/api.supabase": {
+        "file": "routes/api.supabase.ts",
+        "id": "routes/api.supabase",
+        "path": "api/supabase",
+        "parentId": "root"
+      },
+      "routes/api.llmcall": {
+        "file": "routes/api.llmcall.ts",
+        "id": "routes/api.llmcall",
+        "path": "api/llmcall",
+        "parentId": "root"
+      },
+      "routes/api.health": {
+        "file": "routes/api.health.ts",
+        "id": "routes/api.health",
+        "path": "api/health",
+        "parentId": "root"
+      },
+      "routes/api.models": {
+        "file": "routes/api.models.ts",
+        "id": "routes/api.models",
+        "path": "api/models",
+        "parentId": "root"
+      },
+      "routes/api.update": {
+        "file": "routes/api.update.ts",
+        "id": "routes/api.update",
+        "path": "api/update",
+        "parentId": "root"
+      },
+      "routes/api.audit": {
+        "file": "routes/api.audit.ts",
+        "id": "routes/api.audit",
+        "path": "api/audit",
+        "parentId": "root"
+      },
+      "routes/api.chat": {
+        "file": "routes/api.chat.ts",
+        "id": "routes/api.chat",
+        "path": "api/chat",
+        "parentId": "root"
+      },
+      "routes/chat.$id": {
+        "file": "routes/chat.$id.tsx",
+        "id": "routes/chat.$id",
+        "path": "chat/:id",
+        "parentId": "root"
+      },
+      "routes/_index": {
+        "file": "routes/_index.tsx",
+        "id": "routes/_index",
+        "index": true,
+        "parentId": "root"
+      },
+      "routes/git": {
+        "file": "routes/git.tsx",
+        "id": "routes/git",
+        "path": "git",
+        "parentId": "root"
+      }
+    },
+    "serverBuildFile": "index.js",
+    "serverModuleFormat": "esm",
+    "ssr": true
+  },
+  "viteConfig": {
+    "build": {
+      "assetsDir": "assets"
+    }
+  }
+}

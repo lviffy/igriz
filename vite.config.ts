@@ -1,4 +1,5 @@
 import { cloudflareDevProxyVitePlugin as remixCloudflareDevProxy, vitePlugin as remixVitePlugin } from '@remix-run/dev';
+import { vercelPreset } from '@vercel/remix/vite';
 import UnoCSS from 'unocss/vite';
 import { defineConfig, type ViteDevServer } from 'vite';
 import { nodePolyfills } from 'vite-plugin-node-polyfills';
@@ -45,6 +46,7 @@ export default defineConfig((config) => {
       },
       config.command === 'serve' && config.mode !== 'test' && remixCloudflareDevProxy(),
       remixVitePlugin({
+        presets: process.env.VERCEL ? [vercelPreset()] : undefined,
         future: {
           v3_fetcherPersist: true,
           v3_relativeSplatPath: true,
