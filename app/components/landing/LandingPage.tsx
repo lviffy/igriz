@@ -13,6 +13,7 @@ import { LOCAL_PROVIDERS } from '~/lib/stores/settings';
 import { toast } from 'react-toastify';
 import { WebSearch } from '~/components/chat/WebSearch.client';
 import { defaultDesignScheme } from '~/types/design-scheme';
+import { kAccentTheme, setAccentTheme, type AccentTheme } from '~/lib/stores/accentTheme';
 
 interface LandingPageProps {
   onLaunch?: (prompt?: string) => void;
@@ -131,7 +132,7 @@ function paletteEquals(a: BuilderColorPalette, b: BuilderColorPalette): boolean 
 }
 
 type LandingPalette = {
-  id: string;
+  id: AccentTheme;
   name: string;
   accent: string;
   accentHover: string;
@@ -333,7 +334,7 @@ export function LandingPage({ onLaunch }: LandingPageProps) {
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [showModelSettings, setShowModelSettings] = useState(true);
   const [showPalettePicker, setShowPalettePicker] = useState(false);
-  const [selectedPaletteId, setSelectedPaletteId] = useState('ember');
+  const [selectedPaletteId, setSelectedPaletteId] = useState<AccentTheme>('ember');
   const [showBuilderColorPicker, setShowBuilderColorPicker] = useState(false);
   const [builderPalette, setBuilderPalette] = useState<BuilderColorPalette>(defaultBuilderPalette);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -357,10 +358,12 @@ export function LandingPage({ onLaunch }: LandingPageProps) {
 
   useEffect(() => {
     try {
-      const storedPalette = localStorage.getItem(LANDING_PALETTE_KEY);
+      const storedAccentTheme = localStorage.getItem(kAccentTheme);
+      const storedLandingPalette = localStorage.getItem(LANDING_PALETTE_KEY);
+      const storedPalette = storedAccentTheme || storedLandingPalette;
 
       if (storedPalette && LANDING_PALETTES.some((palette) => palette.id === storedPalette)) {
-        setSelectedPaletteId(storedPalette);
+        setSelectedPaletteId(storedPalette as AccentTheme);
       }
     } catch {
       // Ignore localStorage access issues.
@@ -386,6 +389,7 @@ export function LandingPage({ onLaunch }: LandingPageProps) {
   useEffect(() => {
     try {
       localStorage.setItem(LANDING_PALETTE_KEY, selectedPaletteId);
+      setAccentTheme(selectedPaletteId);
     } catch {
       // Ignore localStorage access issues.
     }
@@ -588,8 +592,12 @@ export function LandingPage({ onLaunch }: LandingPageProps) {
 
   const handleLaunch = useCallback(() => {
     const trimmedPrompt = prompt.trim();
+
+    // Persist the same accent choice before switching from landing to chat.
+    setAccentTheme(selectedPaletteId);
+
     onLaunch?.(trimmedPrompt.length > 0 ? trimmedPrompt : undefined);
-  }, [onLaunch, prompt]);
+  }, [onLaunch, prompt, selectedPaletteId]);
 
   return (
     <>
