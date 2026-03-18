@@ -41,7 +41,10 @@ function parseCookies(cookieHeader: string): Record<string, string> {
 }
 
 async function chatAction({ context, request }: ActionFunctionArgs) {
-  const x402Gate = await enforceX402ForChat(request, context.cloudflare?.env as Record<string, unknown> | undefined);
+  const x402Gate = await enforceX402ForChat(
+    request,
+    context.cloudflare?.env as unknown as Record<string, unknown> | undefined,
+  );
 
   if (!x402Gate.allowed) {
     return x402Gate.response;

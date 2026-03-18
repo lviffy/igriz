@@ -33,5 +33,10 @@
     "**/.server/**/*.tsx",
     "**/.client/**/*.ts",
     "**/.client/**/*.tsx"
+  ],
+  "exclude": [
+    "igriz/**",
+    "build/**",
+    "node_modules/**"
   ]
 }

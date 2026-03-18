@@ -48,19 +48,15 @@ export function BranchSelector({
     setError(null);
 
     try {
-      let response: Response;
-
-      if (provider === 'github') {
-        response = await fetch('/api/github-branches', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            owner: repoOwner,
-            repo: repoName,
-            token,
-          }),
-        });
-      }
+      const response = await fetch('/api/github-branches', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          owner: repoOwner,
+          repo: repoName,
+          token,
+        }),
+      });
 
       if (!response.ok) {
         const errorData: any = await response.json().catch(() => ({ error: 'Failed to fetch branches' }));
@@ -95,7 +91,7 @@ export function BranchSelector({
     if (isOpen && !branches.length) {
       fetchBranches();
     }
-  }, [isOpen, repoOwner, repoName, projectId]);
+  }, [isOpen, branches.length, repoOwner, repoName, token, provider]);
 
   // Reset search when closing
   useEffect(() => {

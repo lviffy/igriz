@@ -108,7 +108,7 @@ async function handleProxyRequest(request: Request, path: string | undefined) {
     console.log('Request headers:', Object.fromEntries(headers.entries()));
 
     // Prepare fetch options
-    const fetchOptions: RequestInit = {
+    const fetchOptions: RequestInit & { duplex?: 'half' } = {
       method: request.method,
       headers,
       redirect: 'follow',

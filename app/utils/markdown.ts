@@ -3,7 +3,7 @@ import remarkGfm from 'remark-gfm';
 import type { PluggableList, Plugin } from 'unified';
 import rehypeSanitize, { defaultSchema, type Options as RehypeSanitizeOptions } from 'rehype-sanitize';
 import { SKIP, visit } from 'unist-util-visit';
-import type { UnistNode, UnistParent } from 'node_modules/unist-util-visit/lib';
+import type { Node as UnistNode, Parent as UnistParent } from 'unist';
 
 export const allowedHTMLElements = [
   'a',
@@ -129,9 +129,11 @@ const limitedMarkdownPlugin: Plugin = () => {
   return (tree, file) => {
     const contents = file.toString();
 
-    visit(tree, (node: UnistNode, index, parent: UnistParent) => {
+    visit(tree, (node: UnistNode, index, parent: UnistParent | undefined) => {
       if (
         index == null ||
+        !parent ||
+        !Array.isArray(parent.children) ||
         ['paragraph', 'text', 'inlineCode', 'code', 'strong', 'emphasis'].includes(node.type) ||
         !node.position
       ) {
