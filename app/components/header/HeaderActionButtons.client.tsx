@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useStore } from '@nanostores/react';
 import { workbenchStore } from '~/lib/stores/workbench';
 import { DeployButton } from '~/components/deploy/DeployButton';
+import { WalletButton } from '~/components/wallet/WalletButton';
 
 interface HeaderActionButtonsProps {
   chatStarted: boolean;
@@ -16,6 +17,8 @@ export function HeaderActionButtons({ chatStarted: _chatStarted }: HeaderActionB
 
   return (
     <div className="flex items-center gap-1">
+      <WalletButton />
+
       {/* Deploy Button */}
       {shouldShowButtons && <DeployButton />}
 

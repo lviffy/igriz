@@ -257,13 +257,6 @@ export class ImportExportService {
       Groq: '',
       HuggingFace: '',
       OpenRouter: '',
-      Deepseek: '',
-      Mistral: '',
-      OpenAILike: '',
-      Together: '',
-      xAI: '',
-      Perplexity: '',
-      Cohere: '',
       AzureOpenAI: '',
     };
 

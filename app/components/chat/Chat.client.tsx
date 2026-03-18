@@ -2,7 +2,7 @@ import { useStore } from '@nanostores/react';
 import type { Message } from 'ai';
 import { useChat } from '@ai-sdk/react';
 import { useAnimate } from 'framer-motion';
-import { memo, useCallback, useEffect, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
 import { useMessageParser, usePromptEnhancer, useShortcuts } from '~/lib/hooks';
 import { description, useChatHistory } from '~/lib/persistence';
@@ -28,6 +28,8 @@ import type { ElementInfo } from '~/components/workbench/Inspector';
 import type { TextUIPart, FileUIPart, Attachment } from '@ai-sdk/ui-utils';
 import { useMCPStore } from '~/lib/stores/mcp';
 import type { LlmErrorAlertType } from '~/types/actions';
+import { walletStore } from '~/lib/stores/wallet';
+import { getX402PaymentFetch } from '~/lib/x402/client';
 
 const logger = createScopedLogger('Chat');
 
@@ -116,6 +118,8 @@ export const ChatImpl = memo(
     const [chatMode, setChatMode] = useState<'discuss' | 'build'>('build');
     const [selectedElement, setSelectedElement] = useState<ElementInfo | null>(null);
     const mcpSettings = useMCPStore((state) => state.settings);
+    const wallet = useStore(walletStore);
+    const x402PaymentFetch = useMemo(() => getX402PaymentFetch(wallet.privateKey), [wallet.privateKey]);
 
     const {
       messages,
@@ -133,6 +137,7 @@ export const ChatImpl = memo(
       addToolResult,
     } = useChat({
       api: '/api/chat',
+      fetch: x402PaymentFetch ?? fetch,
       body: {
         apiKeys,
         files,
@@ -149,6 +154,7 @@ export const ChatImpl = memo(
           },
         },
         maxLLMSteps: mcpSettings.maxLLMSteps,
+        walletPrivateKey: wallet.privateKey ?? undefined,
       },
       sendExtraMessageFields: true,
       onError: (e) => {

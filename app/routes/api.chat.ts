@@ -14,6 +14,7 @@ import { extractPropertiesFromMessage } from '~/lib/.server/llm/utils';
 import type { DesignScheme } from '~/types/design-scheme';
 import { MCPService } from '~/lib/services/mcpService';
 import { StreamRecoveryManager } from '~/lib/.server/llm/stream-recovery';
+import { enforceX402ForChat } from '~/lib/.server/x402';
 
 export async function action(args: ActionFunctionArgs) {
   return chatAction(args);
@@ -40,6 +41,12 @@ function parseCookies(cookieHeader: string): Record<string, string> {
 }
 
 async function chatAction({ context, request }: ActionFunctionArgs) {
+  const x402Gate = await enforceX402ForChat(request, context.cloudflare?.env as Record<string, unknown> | undefined);
+
+  if (!x402Gate.allowed) {
+    return x402Gate.response;
+  }
+
   const streamRecovery = new StreamRecoveryManager({
     timeout: 45000,
     maxRetries: 2,
@@ -48,7 +55,7 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
     },
   });
 
-  const { messages, files, promptId, contextOptimization, supabase, chatMode, designScheme, maxLLMSteps } =
+  const { messages, files, promptId, contextOptimization, supabase, chatMode, designScheme, walletPrivateKey, maxLLMSteps } =
     await request.json<{
       messages: Messages;
       files: any;
@@ -56,6 +63,7 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
       contextOptimization: boolean;
       chatMode: 'discuss' | 'build';
       designScheme?: DesignScheme;
+      walletPrivateKey?: string;
       supabase?: {
         isConnected: boolean;
         hasSelectedProject: boolean;
@@ -278,6 +286,7 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
               contextFiles: filteredFiles,
               chatMode,
               designScheme,
+              walletPrivateKey,
               summary,
               messageSliceId,
             });
@@ -319,6 +328,7 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
           contextFiles: filteredFiles,
           chatMode,
           designScheme,
+          walletPrivateKey,
           summary,
           messageSliceId,
         });
@@ -425,6 +435,7 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
         Connection: 'keep-alive',
         'Cache-Control': 'no-cache',
         'Text-Encoding': 'chunked',
+        ...x402Gate.settlementHeaders,
       },
     });
   } catch (error: any) {

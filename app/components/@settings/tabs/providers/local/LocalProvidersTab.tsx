@@ -36,7 +36,7 @@ export default function LocalProvidersTab() {
   // Memoized filtered providers to prevent unnecessary re-renders
   const filteredProviders = useMemo(() => {
     return Object.entries(providers || {})
-      .filter(([key]) => [...LOCAL_PROVIDERS, 'OpenAILike'].includes(key))
+      .filter(([key]) => LOCAL_PROVIDERS.includes(key))
       .map(([key, value]) => {
         const provider = value as IProviderConfig;
         const envKey = providerBaseUrlEnvKeys[key]?.baseUrlKey;
@@ -46,9 +46,7 @@ export default function LocalProvidersTab() {
         let defaultBaseUrl = provider.settings.baseUrl || envUrl;
 
         if (!defaultBaseUrl) {
-          if (key === 'Ollama') {
-            defaultBaseUrl = 'http://127.0.0.1:11434';
-          } else if (key === 'LMStudio') {
+          if (key === 'LMStudio') {
             defaultBaseUrl = 'http://127.0.0.1:1234';
           }
         }
@@ -67,9 +65,7 @@ export default function LocalProvidersTab() {
         } as IProviderConfig;
       })
       .sort((a, b) => {
-        // Custom sort: Ollama first, then LMStudio, then OpenAILike
-        const order = { Ollama: 0, LMStudio: 1, OpenAILike: 2 };
-        return (order[a.name as keyof typeof order] || 3) - (order[b.name as keyof typeof order] || 3);
+        return a.name.localeCompare(b.name);
       });
   }, [providers]);
 

@@ -6,11 +6,21 @@
 @use 'components/code.scss';
 @use 'components/editor.scss';
 @use 'components/toast.scss';
+@use 'components/landing.scss';
+
+@font-face {
+  font-family: 'Monorama';
+  src: url('/Monorama.woff2') format('woff2');
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
 
 html,
 body {
   height: 100%;
   width: 100%;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   background-color: var(--igriz-elements-bg-depth-1);
 }
 

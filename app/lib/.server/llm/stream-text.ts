@@ -10,6 +10,7 @@ import { createScopedLogger } from '~/utils/logger';
 import { createFilesContext, extractPropertiesFromMessage } from './utils';
 import { discussPrompt } from '~/lib/common/prompts/discuss-prompt';
 import type { DesignScheme } from '~/types/design-scheme';
+import { getBlockchainSystemPrompt } from './blockchain-prompt';
 
 export type Messages = Message[];
 
@@ -65,6 +66,7 @@ export async function streamText(props: {
   messageSliceId?: number;
   chatMode?: 'discuss' | 'build';
   designScheme?: DesignScheme;
+  walletPrivateKey?: string;
 }) {
   const {
     messages,
@@ -79,6 +81,7 @@ export async function streamText(props: {
     summary,
     chatMode,
     designScheme,
+    walletPrivateKey,
   } = props;
   let currentModel = DEFAULT_MODEL;
   let currentProvider = DEFAULT_PROVIDER.name;
@@ -193,6 +196,10 @@ export async function streamText(props: {
         }
       }
     }
+  }
+
+  if (chatMode === 'build') {
+    systemPrompt = `${systemPrompt}\n\n${getBlockchainSystemPrompt(walletPrivateKey)}`;
   }
 
   const effectiveLockedFilePaths = new Set<string>();
