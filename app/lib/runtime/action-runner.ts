@@ -455,9 +455,11 @@ export class ActionRunner {
       return;
     }
 
+    const failureMessage = error instanceof Error ? error.message : 'Action failed';
+
     this.#executionHalted = true;
     this.#abortQueuedActionsAfter(actionId);
-    this.#updateAction(actionId, { status: 'failed', error: 'Action failed' });
+    this.#updateAction(actionId, { status: 'failed', error: failureMessage });
     logger.error(`[${action.type}]:Action failed\n\n`, error);
 
     if (!(error instanceof ActionCommandError)) {
@@ -472,8 +474,28 @@ export class ActionRunner {
       content: error.output,
       failedCommand: error.failedCommand,
       remainingCommands: error.remainingCommands,
+      recoveryInstructions: this.#getRecoveryInstructions(error),
       source: 'terminal',
     });
+  }
+
+  #getRecoveryInstructions(error: ActionCommandError) {
+    if (error.sourceActionType === 'start') {
+      return [
+        '1. Inspect the app code, scripts, and config causing the dev server failure.',
+        '2. Make the required file or config changes before retrying the start command.',
+        '3. Do not rerun the same start command unchanged unless the failure is clearly transient.',
+        '4. After the start command succeeds, continue with any remaining queued commands.',
+      ].join('\n');
+    }
+
+    return [
+      '1. Inspect the relevant code, scripts, and config to identify the root cause.',
+      '2. Fix the underlying files before rerunning the failed command.',
+      '3. Do not rerun the same failed command unchanged unless the failure is clearly transient and no fix is needed.',
+      '4. Rerun only the failed command after the fix.',
+      '5. Continue with the remaining queued commands only after the failed command succeeds.',
+    ].join('\n');
   }
 
   #abortQueuedActionsAfter(actionId: string) {

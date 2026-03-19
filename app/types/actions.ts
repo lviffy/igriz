@@ -42,6 +42,7 @@ export interface ActionAlert {
   id?: string;
   failedCommand?: string;
   remainingCommands?: string[];
+  recoveryInstructions?: string;
   source?: 'terminal' | 'preview'; // Add source to differentiate between terminal and preview errors
 }
 

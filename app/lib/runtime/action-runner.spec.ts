@@ -96,10 +96,14 @@ node scripts/deploy.cjs`,
       'node scripts/compile.cjs',
     ]);
     expect(runner.actions.get()['0'].status).toBe('failed');
+    expect('error' in runner.actions.get()['0'] ? runner.actions.get()['0'].error : '').toContain(
+      'Failed To Execute Shell Command',
+    );
     expect(runner.actions.get()['1'].status).toBe('aborted');
     expect(alerts).toHaveLength(1);
     expect(alerts[0].failedCommand).toBe('node scripts/compile.cjs');
     expect(alerts[0].remainingCommands).toEqual(['node scripts/deploy.cjs', 'npm run dev']);
+    expect(alerts[0].recoveryInstructions).toContain('Fix the underlying files before rerunning the failed command.');
     expect(alerts[0].source).toBe('terminal');
   });
 });

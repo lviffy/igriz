@@ -18,10 +18,18 @@ export function buildActionAlertPrompt(alert: ActionAlert) {
     alert.remainingCommands && alert.remainingCommands.length > 0
       ? `Remaining queued commands:\n\`\`\`sh\n${alert.remainingCommands.join('\n')}\n\`\`\`\n\n`
       : '';
-  const instruction =
+  const defaultRecoveryInstructions =
     source === 'terminal'
-      ? 'Fix this terminal error, rerun the failed command, and only continue with the remaining queued commands after that command succeeds.'
+      ? [
+          'Follow this repair flow strictly:',
+          '1. Read the terminal output and identify the root cause.',
+          '2. Fix the relevant code, files, or config before retrying.',
+          '3. Do not rerun the same failed command unchanged unless the failure is clearly transient and no fix is needed.',
+          '4. Rerun only the failed command after the fix.',
+          '5. Continue with the remaining queued commands only after the failed command succeeds.',
+        ].join('\n')
       : 'Fix this preview error.';
+  const instruction = alert.recoveryInstructions || defaultRecoveryInstructions;
 
   return `*${instruction}*\n\n${descriptionSection}${failedCommandSection}${remainingCommandsSection}\`\`\`${source === 'preview' ? 'js' : 'sh'}\n${alert.content}\n\`\`\`\n`;
 }
