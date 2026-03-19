@@ -8,6 +8,7 @@ import { useMessageParser, usePromptEnhancer, useShortcuts } from '~/lib/hooks';
 import { description, useChatHistory } from '~/lib/persistence';
 import { chatStore } from '~/lib/stores/chat';
 import { workbenchStore } from '~/lib/stores/workbench';
+import type { FileMap } from '~/lib/stores/files';
 import { DEFAULT_MODEL, DEFAULT_PROVIDER, PROMPT_COOKIE_KEY, PROVIDER_LIST } from '~/utils/constants';
 import { cubicEasingFn } from '~/utils/easings';
 import { createScopedLogger, renderLogger } from '~/utils/logger';
@@ -41,7 +42,7 @@ interface ChatContainerProps {
 export function Chat({ initialPrompt }: ChatContainerProps) {
   renderLogger.trace('Chat');
 
-  const { ready, initialMessages, storeMessageHistory, importChat, exportChat } = useChatHistory();
+  const { ready, initialMessages, storeMessageHistory, persistSnapshot, importChat, exportChat } = useChatHistory();
   const title = useStore(description);
   useEffect(() => {
     workbenchStore.setReloadedMessages(initialMessages.map((m) => m.id));
@@ -55,6 +56,7 @@ export function Chat({ initialPrompt }: ChatContainerProps) {
           initialMessages={initialMessages}
           exportChat={exportChat}
           storeMessageHistory={storeMessageHistory}
+          persistSnapshot={persistSnapshot}
           importChat={importChat}
           initialPrompt={initialPrompt}
         />
@@ -81,9 +83,27 @@ const processSampledMessages = createSampler(
   50,
 );
 
+const persistSampledSnapshot = createSampler(
+  (options: {
+    messages: Message[];
+    files: FileMap;
+    persistSnapshot: (messages: Message[], files: FileMap) => Promise<void>;
+  }) => {
+    const { messages, files, persistSnapshot } = options;
+
+    if (messages.length === 0) {
+      return;
+    }
+
+    persistSnapshot(messages, files).catch((error) => toast.error(error.message));
+  },
+  300,
+);
+
 interface ChatProps {
   initialMessages: Message[];
   storeMessageHistory: (messages: Message[]) => Promise<void>;
+  persistSnapshot: (messages: Message[], files: FileMap) => Promise<void>;
   importChat: (description: string, messages: Message[]) => Promise<void>;
   exportChat: () => void;
   description?: string;
@@ -91,7 +111,15 @@ interface ChatProps {
 }
 
 export const ChatImpl = memo(
-  ({ description, initialMessages, storeMessageHistory, importChat, exportChat, initialPrompt }: ChatProps) => {
+  ({
+    description,
+    initialMessages,
+    storeMessageHistory,
+    persistSnapshot,
+    importChat,
+    exportChat,
+    initialPrompt,
+  }: ChatProps) => {
     useShortcuts();
 
     const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -128,6 +156,7 @@ export const ChatImpl = memo(
     const [walletKeyInput, setWalletKeyInput] = useState('');
     const initialPromptSentRef = useRef(false);
     const walletPromptShownForInitialPromptRef = useRef(false);
+    const hasObservedInitialFilesRef = useRef(false);
     const mcpSettings = useMCPStore((state) => state.settings);
     const wallet = useStore(walletStore);
     const x402PaymentFetch = useMemo(() => getX402PaymentFetch(wallet.privateKey), [wallet.privateKey]);
@@ -289,7 +318,28 @@ export const ChatImpl = memo(
         parseMessages,
         storeMessageHistory,
       });
-    }, [messages, isLoading, parseMessages]);
+    }, [initialMessages, isLoading, messages, parseMessages, storeMessageHistory]);
+
+    useEffect(() => {
+      hasObservedInitialFilesRef.current = false;
+    }, [initialMessages]);
+
+    useEffect(() => {
+      if (!hasObservedInitialFilesRef.current) {
+        hasObservedInitialFilesRef.current = true;
+        return;
+      }
+
+      if (Object.keys(files).length === 0) {
+        return;
+      }
+
+      persistSampledSnapshot({
+        messages,
+        files,
+        persistSnapshot,
+      });
+    }, [files, messages, persistSnapshot]);
 
     const scrollTextArea = () => {
       const textarea = textareaRef.current;
@@ -493,6 +543,7 @@ export const ChatImpl = memo(
       if (!hasWalletKey()) {
         openWalletDialog();
         toast.error('Add your wallet private key to send a message.');
+
         return;
       }
 

@@ -39,6 +39,22 @@ export const db = persistenceEnabled ? await openDatabase() : undefined;
 export const chatId = atom<string | undefined>(undefined);
 export const description = atom<string | undefined>(undefined);
 export const chatMetadata = atom<IChatMetadata | undefined>(undefined);
+
+function getChatSummaryFromMessages(messages: Message[]): string | undefined {
+  const lastMessage = messages[messages.length - 1];
+
+  if (lastMessage?.role !== 'assistant') {
+    return undefined;
+  }
+
+  const annotations = lastMessage.annotations as JSONValue[];
+  const filteredAnnotations = (annotations?.filter((annotation: JSONValue) => {
+    return annotation && typeof annotation === 'object' && Object.keys(annotation).includes('type');
+  }) || []) as { type: string; value: any } & { [key: string]: any }[];
+
+  return filteredAnnotations.find((annotation) => annotation.type === 'chatSummary')?.summary;
+}
+
 export function useChatHistory() {
   const navigate = useNavigate();
   const { id: mixedId } = useLoaderData<{ id?: string }>();
@@ -257,6 +273,19 @@ ${value.content}
 
   return {
     ready: !mixedId || ready,
+    persistSnapshot: async (messages: Message[], files: FileMap = workbenchStore.files.get()) => {
+      if (!db || messages.length === 0 || !chatId.get()) {
+        return;
+      }
+
+      const latestMessage = messages[messages.length - 1];
+
+      if (!latestMessage?.id) {
+        return;
+      }
+
+      await takeSnapshot(latestMessage.id, files, urlId, getChatSummaryFromMessages(messages));
+    },
     initialMessages,
     updateChatMestaData: async (metadata: IChatMetadata) => {
       const id = chatId.get();
@@ -290,20 +319,7 @@ ${value.content}
         setUrlId(urlId);
       }
 
-      let chatSummary: string | undefined = undefined;
-      const lastMessage = messages[messages.length - 1];
-
-      if (lastMessage.role === 'assistant') {
-        const annotations = lastMessage.annotations as JSONValue[];
-        const filteredAnnotations = (annotations?.filter(
-          (annotation: JSONValue) =>
-            annotation && typeof annotation === 'object' && Object.keys(annotation).includes('type'),
-        ) || []) as { type: string; value: any } & { [key: string]: any }[];
-
-        if (filteredAnnotations.find((annotation) => annotation.type === 'chatSummary')) {
-          chatSummary = filteredAnnotations.find((annotation) => annotation.type === 'chatSummary')?.summary;
-        }
-      }
+      const chatSummary = getChatSummaryFromMessages(messages);
 
       takeSnapshot(messages[messages.length - 1].id, workbenchStore.files.get(), _urlId, chatSummary);
 
