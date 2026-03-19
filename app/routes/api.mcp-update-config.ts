@@ -16,8 +16,8 @@ export async function action({ request }: ActionFunctionArgs) {
     const serverTools = await mcpService.updateConfig(mcpConfig);
 
     return Response.json(serverTools);
-  } catch (error) {
+  } catch (error: any) {
     logger.error('Error updating MCP config:', error);
-    return Response.json({ error: 'Failed to update MCP config' }, { status: 500 });
+    return Response.json({ error: 'Failed to update MCP config', details: error?.message, stack: error?.stack }, { status: 500 });
   }
 }
