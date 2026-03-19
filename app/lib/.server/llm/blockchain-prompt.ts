@@ -159,40 +159,87 @@ export const getBlockchainSystemPrompt = (walletPrivateKey?: string) => `
 
   DEPLOY SCRIPT GAS HANDLING (mandatory — prevents "Priority is too low" errors):
   - NEVER call factory.deploy() without explicit gas options on Polkadot Hub TestNet.
-  - ALWAYS fetch fee data from the network and pass it to deploy():
-      const feeData = await provider.getFeeData();
-      const gasOptions = feeData.maxFeePerGas
-        ? {
-            maxPriorityFeePerGas: feeData.maxPriorityFeePerGas,
-            maxFeePerGas: feeData.maxFeePerGas,
-          }
-        : { gasPrice: feeData.gasPrice };  // legacy fallback for non-EIP-1559 nodes
-      const contract = await factory.deploy(...constructorArgs, gasOptions);
-  - Polkadot Hub TestNet auto-estimates fees too low when left to ethers defaults,
-    causing error code 1014 "Priority is too low: (1 vs 1)".
-  - This pattern also handles L2/private chains that do not support EIP-1559 (fallback to gasPrice).
+  - NEVER rely solely on provider.getFeeData() — Polkadot Hub TestNet frequently returns
+    maxPriorityFeePerGas as 0n or null, which directly causes error 1014 "Priority is too low".
+  - ALWAYS define and use these fallback floor constants at the top of every deploy script:
+      const FALLBACK_PRIORITY = ethers.parseUnits('2', 'gwei');
+      const FALLBACK_MAX_FEE  = ethers.parseUnits('4', 'gwei');
+  - ALWAYS use this exact buildTxOverrides() function — never inline raw getFeeData() output:
 
-  FRONTEND WRITE INTERACTION RULES (mandatory):
-  - Every state-changing button handler (increment/decrement, mint/burn, transfer, stake) MUST:
-    1) set a pending UI state,
-    2) call the contract write method,
-    3) await tx.wait(),
-    4) refresh on-chain state with a read call,
-    5) clear pending state,
-    6) surface success/error message in UI.
-  - Never fire-and-forget transactions; do not ignore the transaction response.
-  - Button handlers must be explicitly bound (onClick={handleIncrement}, onClick={handleDecrement})
-    and functions must not be empty stubs.
-  - Disable action buttons while a transaction is pending to prevent duplicate submits.
-  - Always wrap write calls in try/catch and display readable errors (including user-rejected txs).
-  - Before any write, perform this sequence strictly:
-    1) read current wallet chain,
-    2) switch/add Polkadot Hub network if needed,
-    3) re-read chain and abort if still not 420420417,
-    4) then create signer and send tx.
-  - Never proceed with a write if active chain is not 420420417.
-  - For a counter dApp specifically, increment/decrement must call real contract methods and
-    then reload count from chain.
+      async function buildTxOverrides(multiplier = 2n, forcedNonce) {
+        const feeData = await provider.getFeeData();
+        const nonce =
+          typeof forcedNonce === 'number'
+            ? forcedNonce
+            : await provider.getTransactionCount(wallet.address, 'pending');
+
+        // Floor guard: getFeeData() often returns 0n on Polkadot Hub — never use it raw
+        const basePriority =
+          feeData.maxPriorityFeePerGas && feeData.maxPriorityFeePerGas > FALLBACK_PRIORITY
+            ? feeData.maxPriorityFeePerGas
+            : FALLBACK_PRIORITY;
+
+        const baseMaxFee =
+          feeData.maxFeePerGas && feeData.maxFeePerGas > FALLBACK_MAX_FEE
+            ? feeData.maxFeePerGas
+            : FALLBACK_MAX_FEE;
+
+        const priority = basePriority * multiplier;
+        const maxFee   = baseMaxFee * multiplier > priority * 2n
+          ? baseMaxFee * multiplier
+          : priority * 2n;
+
+        return { nonce, maxPriorityFeePerGas: priority, maxFeePerGas: maxFee };
+      }
+
+  - ALWAYS wrap the deploy call in deployWithRetry() — never call factory.deploy() directly:
+
+      async function deployWithRetry() {
+        const overrides = await buildTxOverrides(2n);
+
+        try {
+          // Pass constructor args before overrides if your contract requires them:
+          // const contract = await factory.deploy(arg1, arg2, overrides);
+          const contract = await factory.deploy(overrides);
+          return { contract, txHash: contract.deploymentTransaction()?.hash, recovered: false };
+        } catch (err) {
+          const msg = String(err?.message || err);
+
+          if (msg.includes('Priority is too low') || msg.includes('replacement transaction underpriced')) {
+            console.warn('Low priority detected — retrying with 4x fee multiplier on same nonce...');
+            const boosted = await buildTxOverrides(4n, overrides.nonce);
+            // const contract = await factory.deploy(arg1, arg2, boosted);
+            const contract = await factory.deploy(boosted);
+            return { contract, txHash: contract.deploymentTransaction()?.hash, recovered: false };
+          }
+
+          if (msg.includes('Transaction Already Imported')) {
+            const predicted = ethers.getCreateAddress({ from: wallet.address, nonce: overrides.nonce });
+            console.warn('Already imported — polling for mined contract at:', predicted);
+            for (let i = 0; i < 12; i++) {
+              await new Promise(r => setTimeout(r, 5000));
+              const code = await provider.getCode(predicted);
+              if (code && code !== '0x') {
+                return {
+                  contract: new ethers.Contract(predicted, artifact.abi, wallet),
+                  txHash: null,
+                  recovered: true,
+                };
+              }
+            }
+            throw new Error('Already imported but not yet mined. Re-run after it confirms on explorer.');
+          }
+
+          throw err;
+        }
+      }
+
+  - Root cause of error 1014 on Polkadot Hub TestNet:
+    The RPC node enforces a minimum tip threshold. When getFeeData() returns
+    maxPriorityFeePerGas = 0n (which it frequently does on this network), ethers.js
+    signs the transaction with a zero tip and the node rejects it with code 1014.
+    The mandatory fix is always applying a minimum floor of 2 Gwei before multiplying,
+    regardless of what getFeeData() returns.
 
   DEPENDENCIES (add these to package.json, nothing more):
   - "solc": "0.8.20"                      — pure JS Solidity compiler (REVM/EVM bytecode output)
@@ -316,6 +363,11 @@ export const getBlockchainSystemPrompt = (walletPrivateKey?: string) => `
   const EXPLORER     = 'https://blockscout-testnet.polkadot.io/';
   const CONTRACT_NAME = '<ContractName>'; // REPLACE with actual Solidity contract name
 
+  // Floor constants — Polkadot Hub TestNet frequently returns 0n from getFeeData(),
+  // which causes error 1014 "Priority is too low" if used without a floor guard.
+  const FALLBACK_PRIORITY = ethers.parseUnits('2', 'gwei');
+  const FALLBACK_MAX_FEE  = ethers.parseUnits('4', 'gwei');
+
   const deployedPath = path.join(__dirname, '..', 'src', 'contracts', 'deployedContract.json');
   const deployedPublicPath = path.join(__dirname, '..', 'public', 'contracts', 'deployedContract.json');
 
@@ -355,10 +407,9 @@ export const getBlockchainSystemPrompt = (walletPrivateKey?: string) => `
     const factory = new ethers.ContractFactory(artifact.abi, artifact.bytecode, wallet);
     console.log('Deploying', CONTRACT_NAME, '...');
 
-    function sleep(ms) {
-      return new Promise((resolve) => setTimeout(resolve, ms));
-    }
-
+    // Build gas overrides with a mandatory floor guard.
+    // getFeeData() on Polkadot Hub TestNet frequently returns maxPriorityFeePerGas = 0n,
+    // causing error 1014 if used without correction. Always apply FALLBACK floors.
     async function buildTxOverrides(multiplier = 2n, forcedNonce) {
       const feeData = await provider.getFeeData();
       const nonce =
@@ -366,72 +417,58 @@ export const getBlockchainSystemPrompt = (walletPrivateKey?: string) => `
           ? forcedNonce
           : await provider.getTransactionCount(wallet.address, 'pending');
 
-      const fallbackPriority = ethers.parseUnits('2', 'gwei');
-      const basePriority = feeData.maxPriorityFeePerGas && feeData.maxPriorityFeePerGas > 0n
-        ? feeData.maxPriorityFeePerGas
-        : fallbackPriority;
-      const baseMaxFee = feeData.maxFeePerGas && feeData.maxFeePerGas > basePriority
-        ? feeData.maxFeePerGas
-        : basePriority * 2n;
+      const basePriority =
+        feeData.maxPriorityFeePerGas && feeData.maxPriorityFeePerGas > FALLBACK_PRIORITY
+          ? feeData.maxPriorityFeePerGas
+          : FALLBACK_PRIORITY;
+
+      const baseMaxFee =
+        feeData.maxFeePerGas && feeData.maxFeePerGas > FALLBACK_MAX_FEE
+          ? feeData.maxFeePerGas
+          : FALLBACK_MAX_FEE;
 
       const priority = basePriority * multiplier;
-      const maxFee = baseMaxFee * multiplier > priority * 2n ? baseMaxFee * multiplier : priority * 2n;
+      const maxFee   = baseMaxFee * multiplier > priority * 2n
+        ? baseMaxFee * multiplier
+        : priority * 2n;
 
-      return {
-        nonce,
-        maxPriorityFeePerGas: priority,
-        maxFeePerGas: maxFee,
-      };
+      return { nonce, maxPriorityFeePerGas: priority, maxFeePerGas: maxFee };
     }
 
     async function deployWithRetry() {
       const overrides = await buildTxOverrides(2n);
 
       try {
-        // If your contract has constructor args, pass them here:
+        // If your contract has constructor args, pass them before overrides:
         // const contract = await factory.deploy(arg1, arg2, overrides);
         const contract = await factory.deploy(overrides);
-
-        return {
-          contract,
-          txHash: contract.deploymentTransaction()?.hash,
-          recovered: false,
-        };
+        return { contract, txHash: contract.deploymentTransaction()?.hash, recovered: false };
       } catch (err) {
         const msg = String(err?.message || err);
 
-        // Handle replacement/priority edge case with same nonce and boosted fees.
         if (msg.includes('Priority is too low') || msg.includes('replacement transaction underpriced')) {
-          console.warn('Low tx priority detected, retrying deploy with higher fees...');
+          console.warn('Low priority detected — retrying with 4x fee multiplier on same nonce...');
           const boosted = await buildTxOverrides(4n, overrides.nonce);
           // const contract = await factory.deploy(arg1, arg2, boosted);
           const contract = await factory.deploy(boosted);
-
-          return {
-            contract,
-            txHash: contract.deploymentTransaction()?.hash,
-            recovered: false,
-          };
+          return { contract, txHash: contract.deploymentTransaction()?.hash, recovered: false };
         }
 
         if (msg.includes('Transaction Already Imported')) {
-          const predictedAddress = ethers.getCreateAddress({ from: wallet.address, nonce: overrides.nonce });
-          console.warn('Transaction already imported. Waiting for contract to be mined at:', predictedAddress);
-
+          const predicted = ethers.getCreateAddress({ from: wallet.address, nonce: overrides.nonce });
+          console.warn('Already imported — polling for mined contract at:', predicted);
           for (let i = 0; i < 12; i++) {
-            await sleep(5000);
-            const code = await provider.getCode(predictedAddress);
-
+            await new Promise(r => setTimeout(r, 5000));
+            const code = await provider.getCode(predicted);
             if (code && code !== '0x') {
               return {
-                contract: new ethers.Contract(predictedAddress, artifact.abi, wallet),
+                contract: new ethers.Contract(predicted, artifact.abi, wallet),
                 txHash: null,
                 recovered: true,
               };
             }
           }
-
-          throw new Error('Transaction already imported but deployment not mined yet. Check explorer and re-run after it confirms.');
+          throw new Error('Already imported but not yet mined. Re-run after it confirms on explorer.');
         }
 
         throw err;
@@ -588,13 +625,20 @@ export const getBlockchainSystemPrompt = (walletPrivateKey?: string) => `
     - Missing PRIVATE_KEY: create/update .env with PRIVATE_KEY and rerun deploy.
     - Wrong contract placeholder: replace <ContractName> in scripts/deploy.cjs with the
       actual Solidity contract name.
-    - "Priority is too low" (error 1014): ensure getFeeData() + gasOptions pattern is used
-      in deploy() — never call factory.deploy() without explicit gas options.
+    - "Priority is too low" (error 1014): this means maxPriorityFeePerGas was too low
+      (often 0n from getFeeData()). Fix: ensure FALLBACK_PRIORITY = ethers.parseUnits('2', 'gwei')
+      floor is applied in buildTxOverrides() before multiplying. Never use raw getFeeData()
+      output directly. If already using buildTxOverrides(), increase multiplier to 4n and
+      retry on the same nonce. Never use a new nonce on retry — reuse the pending nonce.
     - "Unrecognized chain ID" (error 4902): ensure CHAIN_ID_HEX is derived dynamically
       and wallet_addEthereumChain is called with nativeCurrency symbol 'PAS'.
-    - "Priority is too low" / underpriced replacement tx: use pending nonce, bump maxPriorityFeePerGas/maxFeePerGas, then retry deploy once.
-    - "Invalid Transaction" (-32603) during eth_sendTransaction: remove hardcoded gas, estimate gas from signer contract call, add 20% gasLimit buffer, and verify ABI/address/network alignment.
-    - JSX/TSX parser errors caused by encoded operators (e.g. &lt; or &gt; in source): replace HTML entities with raw characters and rerun compile/dev.
+    - "Priority is too low" / underpriced replacement tx: use pending nonce, bump
+      maxPriorityFeePerGas/maxFeePerGas with 4n multiplier, then retry deploy once.
+    - "Invalid Transaction" (-32603) during eth_sendTransaction: remove hardcoded gas,
+      estimate gas from signer contract call, add 20% gasLimit buffer, and verify
+      ABI/address/network alignment.
+    - JSX/TSX parser errors caused by encoded operators (e.g. &lt; or &gt; in source):
+      replace HTML entities with raw characters and rerun compile/dev.
   - Keep going until deployment succeeds or a true blocker requires user input.
 
   HARD RULES — violations cause runtime errors:
@@ -614,7 +658,9 @@ export const getBlockchainSystemPrompt = (walletPrivateKey?: string) => `
   - Never emit HTML-escaped source operators in file actions (do not emit &lt; / &gt; in JS/TS/JSX/TSX code).
   - CHAIN_ID_HEX MUST always be derived as \`0x\${CHAIN_ID.toString(16)}\` — NEVER a hardcoded string
   - nativeCurrency symbol MUST always be 'PAS' — NEVER 'DOT' or 'ETH'
-  - deploy() MUST always call provider.getFeeData() and pass gasOptions to factory.deploy()
+  - deploy() MUST always use buildTxOverrides() with FALLBACK_PRIORITY floor — NEVER call
+    factory.deploy() with raw getFeeData() output or without explicit gas overrides
+  - deployWithRetry() MUST catch error 1014 and re-attempt with 4n multiplier on same nonce
 </blockchain_dapp_capabilities>
 `
 +
