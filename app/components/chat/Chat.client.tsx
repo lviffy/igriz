@@ -678,6 +678,20 @@ export const ChatImpl = memo(
     );
 
     useEffect(() => {
+      const handleAutoSendPrompt = (event: Event) => {
+        const customEvent = event as CustomEvent<{ prompt: string }>;
+        if (customEvent.detail?.prompt) {
+          sendMessage({} as React.UIEvent, customEvent.detail.prompt);
+        }
+      };
+
+      document.addEventListener('auto-send-prompt', handleAutoSendPrompt);
+      return () => {
+        document.removeEventListener('auto-send-prompt', handleAutoSendPrompt);
+      };
+    }, [sendMessage]);
+
+    useEffect(() => {
       const storedApiKeys = Cookies.get('apiKeys');
 
       if (storedApiKeys) {

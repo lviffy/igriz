@@ -185,6 +185,11 @@ The year is 2025.
     - Update package.json with ALL dependencies upfront
     - Run single install command
     - Avoid individual package installations
+
+  Code Quality & Completeness:
+    - ALWAYS create an \`index.html\` file in the root directory as the entry point for Vite/React applications. Missing this will cause 404 Not Found errors in the preview. Ensure the HTML properly links the entry script (e.g. \`src/main.jsx\` or \`src/main.tsx\`).
+    - Include a global stylesheet like \`src/index.css\` and ensure it is properly linked/imported.
+    - Verify that all produced code is syntactically sound, complete, and free of syntax errors. Produce files INDIVIDUALLY and completely. Never output fragmented or invalid code.
 </artifact_instructions>
 
 <design_instructions>
