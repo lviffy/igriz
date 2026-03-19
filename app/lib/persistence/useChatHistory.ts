@@ -22,6 +22,7 @@ import type { Snapshot } from './types';
 import { webcontainer } from '~/lib/webcontainer';
 import { detectProjectCommands, createCommandActionsString } from '~/utils/projectCommands';
 import type { ContextAnnotation } from '~/types/context';
+import { WORK_DIR } from '~/utils/constants';
 
 export interface ChatHistoryItem {
   id: string;
@@ -55,6 +56,40 @@ function getChatSummaryFromMessages(messages: Message[]): string | undefined {
   return filteredAnnotations.find((annotation) => annotation.type === 'chatSummary')?.summary;
 }
 
+function getSnapshotAnchorMessageId(messages: Message[]): string | undefined {
+  for (let index = messages.length - 1; index >= 0; index--) {
+    if (messages[index]?.role === 'assistant') {
+      return messages[index].id;
+    }
+  }
+
+  return messages[messages.length - 1]?.id;
+}
+
+function normalizeSnapshotPath(filePath: string) {
+  let normalizedPath = filePath;
+
+  if (normalizedPath.startsWith(WORK_DIR)) {
+    normalizedPath = normalizedPath.slice(WORK_DIR.length);
+  }
+
+  return normalizedPath.replace(/^\/+/, '');
+}
+
+function normalizeSnapshotFiles(files: FileMap): FileMap {
+  return Object.fromEntries(
+    Object.entries(files).map(([filePath, value]) => [normalizeSnapshotPath(filePath), value]),
+  ) as FileMap;
+}
+
+function normalizeSnapshot(snapshot?: Snapshot): Snapshot {
+  return {
+    chatIndex: snapshot?.chatIndex || '',
+    files: normalizeSnapshotFiles(snapshot?.files || {}),
+    summary: snapshot?.summary,
+  };
+}
+
 export function useChatHistory() {
   const navigate = useNavigate();
   const { id: mixedId } = useLoaderData<{ id?: string }>();
@@ -79,17 +114,16 @@ export function useChatHistory() {
     }
 
     if (mixedId) {
-      Promise.all([
-        getMessages(db, mixedId),
-        getSnapshot(db, mixedId), // Fetch snapshot from DB
-      ])
-        .then(async ([storedMessages, snapshot]) => {
+      getMessages(db, mixedId)
+        .then(async (storedMessages) => {
+          const snapshot = storedMessages ? await getSnapshot(db, storedMessages.id) : undefined;
+
           if (storedMessages && storedMessages.messages.length > 0) {
             /*
              * const snapshotStr = localStorage.getItem(`snapshot:${mixedId}`); // Remove localStorage usage
              * const snapshot: Snapshot = snapshotStr ? JSON.parse(snapshotStr) : { chatIndex: 0, files: {} }; // Use snapshot from DB
              */
-            const validSnapshot = snapshot || { chatIndex: '', files: {} }; // Ensure snapshot is not undefined
+            const validSnapshot = normalizeSnapshot(snapshot);
             const summary = validSnapshot.summary;
 
             const rewindId = searchParams.get('rewindTo');
@@ -116,7 +150,7 @@ export function useChatHistory() {
 
             setArchivedMessages(archivedMessages);
 
-            if (startingIdx > 0) {
+            if (startingIdx >= 0) {
               const files = Object.entries(validSnapshot?.files || {})
                 .map(([key, value]) => {
                   if (value?.type !== 'file') {
@@ -148,7 +182,7 @@ export function useChatHistory() {
                   // Combine followup message and the artifact with files and command actions
                   content: `igriz Restored your chat from a snapshot. You can revert this message to load the full chat history.
                   <igrizArtifact id="restored-project-setup" title="Restored Project & Setup" type="bundled">
-                  ${Object.entries(snapshot?.files || {})
+                  ${Object.entries(validSnapshot.files || {})
                     .map(([key, value]) => {
                       if (value?.type === 'file') {
                         return `
@@ -186,7 +220,7 @@ ${value.content}
                  */
                 ...filteredMessages,
               ];
-              restoreSnapshot(mixedId);
+              await restoreSnapshot(mixedId, validSnapshot);
             }
 
             setInitialMessages(filteredMessages);
@@ -223,7 +257,7 @@ ${value.content}
 
       const snapshot: Snapshot = {
         chatIndex: chatIdx,
-        files,
+        files: normalizeSnapshotFiles(files),
         summary: chatSummary,
       };
 
@@ -242,7 +276,7 @@ ${value.content}
     // const snapshotStr = localStorage.getItem(`snapshot:${id}`); // Remove localStorage usage
     const container = await webcontainer;
 
-    const validSnapshot = snapshot || { chatIndex: '', files: {} };
+    const validSnapshot = normalizeSnapshot(snapshot);
 
     if (!validSnapshot?.files) {
       return;
@@ -263,6 +297,12 @@ ${value.content}
           key = key.replace(container.workdir, '');
         }
 
+        const folder = key.split('/').slice(0, -1).join('/');
+
+        if (folder) {
+          await container.fs.mkdir(folder, { recursive: true });
+        }
+
         await container.fs.writeFile(key, value.content, { encoding: value.isBinary ? undefined : 'utf8' });
       } else {
       }
@@ -278,13 +318,13 @@ ${value.content}
         return;
       }
 
-      const latestMessage = messages[messages.length - 1];
+      const snapshotAnchor = getSnapshotAnchorMessageId(messages);
 
-      if (!latestMessage?.id) {
+      if (!snapshotAnchor) {
         return;
       }
 
-      await takeSnapshot(latestMessage.id, files, urlId, getChatSummaryFromMessages(messages));
+      await takeSnapshot(snapshotAnchor, files, urlId, getChatSummaryFromMessages(messages));
     },
     initialMessages,
     updateChatMestaData: async (metadata: IChatMetadata) => {
@@ -321,7 +361,11 @@ ${value.content}
 
       const chatSummary = getChatSummaryFromMessages(messages);
 
-      takeSnapshot(messages[messages.length - 1].id, workbenchStore.files.get(), _urlId, chatSummary);
+      const snapshotAnchor = getSnapshotAnchorMessageId(messages);
+
+      if (snapshotAnchor) {
+        takeSnapshot(snapshotAnchor, workbenchStore.files.get(), _urlId, chatSummary);
+      }
 
       if (!description.get() && firstArtifact?.title) {
         description.set(firstArtifact?.title);

@@ -5,7 +5,7 @@ import { useAnimate } from 'framer-motion';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
 import { useMessageParser, usePromptEnhancer, useShortcuts } from '~/lib/hooks';
-import { description, useChatHistory } from '~/lib/persistence';
+import { chatId, description, useChatHistory } from '~/lib/persistence';
 import { chatStore } from '~/lib/stores/chat';
 import { workbenchStore } from '~/lib/stores/workbench';
 import type { FileMap } from '~/lib/stores/files';
@@ -159,6 +159,7 @@ export const ChatImpl = memo(
     const hasObservedInitialFilesRef = useRef(false);
     const mcpSettings = useMCPStore((state) => state.settings);
     const wallet = useStore(walletStore);
+    const currentChatId = useStore(chatId);
     const x402PaymentFetch = useMemo(() => getX402PaymentFetch(wallet.privateKey), [wallet.privateKey]);
 
     const closeWalletDialog = useCallback(() => {
@@ -325,6 +326,10 @@ export const ChatImpl = memo(
     }, [initialMessages]);
 
     useEffect(() => {
+      if (!currentChatId) {
+        return;
+      }
+
       if (!hasObservedInitialFilesRef.current) {
         hasObservedInitialFilesRef.current = true;
         return;
@@ -339,7 +344,7 @@ export const ChatImpl = memo(
         files,
         persistSnapshot,
       });
-    }, [files, messages, persistSnapshot]);
+    }, [currentChatId, files, messages, persistSnapshot]);
 
     const scrollTextArea = () => {
       const textarea = textareaRef.current;

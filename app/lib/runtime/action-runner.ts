@@ -1,7 +1,14 @@
 import type { WebContainer } from '@webcontainer/api';
 import { path as nodePath } from '~/utils/path';
 import { atom, map, type MapStore } from 'nanostores';
-import type { ActionAlert, igrizAction, DeployAlert, FileHistory, SupabaseAction, SupabaseAlert } from '~/types/actions';
+import type {
+  ActionAlert,
+  igrizAction,
+  DeployAlert,
+  FileHistory,
+  SupabaseAction,
+  SupabaseAlert,
+} from '~/types/actions';
 import { createScopedLogger } from '~/utils/logger';
 import { unreachable } from '~/utils/unreachable';
 import type { ActionCallbackData } from './message-parser';
@@ -351,6 +358,8 @@ export class ActionRunner {
           sourceActionType: 'shell',
         });
       }
+
+      await this.#persistGeneratedFilesForCommand(command);
     }
   }
 
@@ -519,7 +528,11 @@ export class ActionRunner {
     const queuedCommands = Object.entries(this.actions.get())
       .sort(([leftId], [rightId]) => Number(leftId) - Number(rightId))
       .filter(([queuedActionId, queuedAction]) => {
-        return Number(queuedActionId) > Number(actionId) && !queuedAction.executed && ['shell', 'start'].includes(queuedAction.type);
+        return (
+          Number(queuedActionId) > Number(actionId) &&
+          !queuedAction.executed &&
+          ['shell', 'start'].includes(queuedAction.type)
+        );
       })
       .flatMap(([, queuedAction]) => splitSequentialShellCommands(queuedAction.content));
 
@@ -553,6 +566,70 @@ export class ActionRunner {
 
   #getHistoryPath(filePath: string) {
     return nodePath.join('.history', filePath);
+  }
+
+  async #persistGeneratedFilesForCommand(command: string) {
+    const generatedFiles = await this.#collectGeneratedFilesForCommand(command);
+
+    if (Object.keys(generatedFiles).length === 0) {
+      return;
+    }
+
+    try {
+      const { persistGeneratedFilesToCurrentChatSnapshot } = await import('~/lib/persistence/runtime-generated-files');
+      await persistGeneratedFilesToCurrentChatSnapshot(generatedFiles);
+    } catch (error) {
+      logger.debug('Failed to persist generated files for command', error);
+    }
+  }
+
+  async #collectGeneratedFilesForCommand(command: string) {
+    const trimmedCommand = command.trim();
+
+    if (/^node\s+scripts\/compile\.cjs\b/.test(trimmedCommand)) {
+      return await this.#readJsonFilesFromDirectory('artifacts');
+    }
+
+    if (/^node\s+scripts\/deploy(?:-[\w]+)?\.cjs\b/.test(trimmedCommand)) {
+      return await this.#readKnownGeneratedFiles([
+        'public/contracts/deployedContract.json',
+        'src/contracts/deployedContract.json',
+      ]);
+    }
+
+    return {};
+  }
+
+  async #readJsonFilesFromDirectory(relativeDir: string) {
+    const webcontainer = await this.#webcontainer;
+
+    try {
+      const entries = await webcontainer.fs.readdir(relativeDir);
+      const jsonFileNames = entries.filter((entry) => typeof entry === 'string' && entry.endsWith('.json'));
+
+      return await this.#readKnownGeneratedFiles(jsonFileNames.map((fileName) => `${relativeDir}/${fileName}`));
+    } catch {
+      return {};
+    }
+  }
+
+  async #readKnownGeneratedFiles(filePaths: string[]) {
+    const webcontainer = await this.#webcontainer;
+    const generatedFiles: Record<string, string> = {};
+
+    for (const filePath of filePaths) {
+      try {
+        const content = await webcontainer.fs.readFile(filePath, 'utf-8');
+
+        if (typeof content === 'string' && content.length > 0) {
+          generatedFiles[filePath] = content;
+        }
+      } catch {
+        continue;
+      }
+    }
+
+    return generatedFiles;
   }
 
   async #runBuildAction(action: ActionState) {
