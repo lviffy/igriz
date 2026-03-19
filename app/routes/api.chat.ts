@@ -229,6 +229,9 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
               mcpService.processToolCall(toolCall, dataStream);
             });
           },
+          onChunk: () => {
+             streamRecovery.updateActivity();
+          },
           onFinish: async ({ text: content, finishReason, usage }) => {
             logger.debug('usage', JSON.stringify(usage));
 
@@ -296,17 +299,6 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
 
             result.mergeIntoDataStream(dataStream);
 
-            (async () => {
-              for await (const part of result.fullStream) {
-                if (part.type === 'error') {
-                  const error: any = part.error;
-                  logger.error(`${error}`);
-
-                  return;
-                }
-              }
-            })();
-
             return;
           },
         };
@@ -336,27 +328,6 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
           messageSliceId,
         });
 
-        (async () => {
-          for await (const part of result.fullStream) {
-            streamRecovery.updateActivity();
-
-            if (part.type === 'error') {
-              const error: any = part.error;
-              logger.error('Streaming error:', error);
-              streamRecovery.stop();
-
-              // Enhanced error handling for common streaming issues
-              if (error.message?.includes('Invalid JSON response')) {
-                logger.error('Invalid JSON response detected - likely malformed API response');
-              } else if (error.message?.includes('token')) {
-                logger.error('Token-related error detected - possible token limit exceeded');
-              }
-
-              return;
-            }
-          }
-          streamRecovery.stop();
-        })();
         result.mergeIntoDataStream(dataStream);
       },
       onError: (error: any) => {
