@@ -287,6 +287,46 @@
     }
   });
 
+  // Detect framework errors
+  let lastReportedError = null;
+  setInterval(() => {
+    let errorText = null;
+    
+    // Check Vite
+    const viteOverlay = document.querySelector('vite-error-overlay');
+    if (viteOverlay && viteOverlay.shadowRoot) {
+      // Try to get specific parts first to reduce noise, fallback to all text
+      const messageBody = viteOverlay.shadowRoot.querySelector('.message-body')?.textContent;
+      const fileText = viteOverlay.shadowRoot.querySelector('.file')?.textContent;
+      if (messageBody) {
+        errorText = (fileText ? fileText + '\n' : '') + messageBody;
+      } else {
+        errorText = viteOverlay.shadowRoot.textContent;
+      }
+    }
+    
+    // Check Next.js
+    const nextOverlay = document.querySelector('nextjs-portal');
+    if (nextOverlay && !errorText) {
+      errorText = nextOverlay.textContent;
+    }
+
+    if (errorText) {
+      if (errorText !== lastReportedError) {
+        lastReportedError = errorText;
+        window.parent.postMessage({
+          type: 'PREVIEW_FRAMEWORK_ERROR',
+          text: errorText
+        }, '*');
+      }
+    } else if (lastReportedError) {
+      lastReportedError = null;
+      window.parent.postMessage({
+        type: 'PREVIEW_FRAMEWORK_ERROR_CLEARED'
+      }, '*');
+    }
+  }, 1000);
+
   // Auto-inject if inspector is already active
   window.parent.postMessage({ type: 'INSPECTOR_READY' }, '*');
 })();
