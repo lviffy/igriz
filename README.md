@@ -5,7 +5,7 @@
 # Igriz
 
 Igriz is an AI-driven dApp builder focused on **Polkadot Hub EVM** workflows.  
-It converts natural language prompts into Solidity contracts, frontend code, and shell/file actions, then executes those actions inside an in-browser **WebContainer** workspace.
+It converts natural language prompts into Solidity contracts, frontend code, and shell/file actions, then executes those actions inside an in browser **WebContainer** workspace.
 
 <table>
   <tr>
