@@ -41,18 +41,24 @@ export default async function handleRequest(
       function read() {
         reader
           .read()
-          .then(({ done, value }) => {
+          .then(({ done, value }: { done: boolean; value?: Uint8Array }) => {
             if (done) {
-              controller.enqueue(new Uint8Array(new TextEncoder().encode('</div></body></html>')));
-              controller.close();
+              try {
+                controller.enqueue(new Uint8Array(new TextEncoder().encode('</div></body></html>')));
+                controller.close();
+              } catch (e) {
+                // Ignore error if stream is already closed
+              }
 
               return;
             }
 
-            controller.enqueue(value);
+            if (value) {
+              controller.enqueue(value);
+            }
             read();
           })
-          .catch((error) => {
+          .catch((error: unknown) => {
             controller.error(error);
             readable.cancel();
           });

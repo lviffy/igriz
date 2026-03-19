@@ -1,4 +1,4 @@
-import type { LoaderFunction } from '@remix-run/cloudflare';
+import { json, type LoaderFunction } from '@remix-run/cloudflare';
 import { LLMManager } from '~/lib/modules/llm/manager';
 import { getApiKeysFromCookie } from '~/lib/api/cookies';
 
@@ -8,14 +8,14 @@ export const loader: LoaderFunction = async ({ context, request }) => {
     const provider = url.searchParams.get('provider');
 
     if (!provider) {
-      return Response.json({ isSet: false });
+      return json({ isSet: false });
     }
 
     const llmManager = LLMManager.getInstance(context?.cloudflare?.env as any);
     const providerInstance = llmManager.getProvider(provider);
 
     if (!providerInstance || !providerInstance.config.apiTokenKey) {
-      return Response.json({ isSet: false });
+      return json({ isSet: false });
     }
 
     const envVarName = providerInstance.config.apiTokenKey;
@@ -31,8 +31,8 @@ export const loader: LoaderFunction = async ({ context, request }) => {
       llmManager.env[envVarName]
     );
 
-    return Response.json({ isSet });
+    return json({ isSet });
   } catch (error: any) {
-    return Response.json({ error: error.message, stack: error.stack }, { status: 500 });
+    return json({ error: error.message, stack: error.stack }, { status: 500 });
   }
 };
