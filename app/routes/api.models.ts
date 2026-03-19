@@ -31,6 +31,10 @@ const CURATED_PROVIDER_MODEL_PATTERNS: Record<string, RegExp[]> = {
 const CURATED_MAX_PER_PROVIDER = 8;
 
 function curateModelsForProvider(providerName: string, models: ModelInfo[]): ModelInfo[] {
+  if (providerName === 'Nvidia') {
+    return models;
+  }
+
   if (models.length <= CURATED_MAX_PER_PROVIDER) {
     return models;
   }

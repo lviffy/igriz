@@ -61,8 +61,12 @@ export function WalletButton({ variant = 'header' }: WalletButtonProps) {
         onClick={() => setOpen((value) => !value)}
         className={
           isLanding
-            ? `landing-wallet-btn${wallet.hasKey ? ' connected' : ''}`
-            : 'h-8 px-3 rounded-md border border-igriz-elements-borderColor bg-igriz-elements-button-secondary-background text-xs text-igriz-elements-textPrimary hover:bg-igriz-elements-button-secondary-backgroundHover'
+            ? `landing-wallet-btn${wallet.hasKey ? ' connected' : ' needs-key'}`
+            : `h-8 px-3 rounded-md border text-xs ${
+                wallet.hasKey
+                  ? 'border-emerald-500/70 bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30'
+                  : 'border-red-500/70 bg-red-500/20 text-red-300 hover:bg-red-500/30'
+              }`
         }
         title="Configure wallet private key (in-memory only)"
       >

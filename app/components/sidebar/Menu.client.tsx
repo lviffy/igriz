@@ -5,7 +5,7 @@ import { toast } from 'react-toastify';
 import { Dialog, DialogButton, DialogDescription, DialogRoot, DialogTitle } from '~/components/ui/Dialog';
 import { ThemeSwitch } from '~/components/ui/ThemeSwitch';
 import { ControlPanel } from '~/components/@settings/core/ControlPanel';
-import { SettingsButton, HelpButton } from '~/components/ui/SettingsButton';
+import { SettingsButton } from '~/components/ui/SettingsButton';
 import { Button } from '~/components/ui/Button';
 import { db, deleteById, getAll, chatId, type ChatHistoryItem, useChatHistory } from '~/lib/persistence';
 import { cubicEasingFn } from '~/utils/easings';
@@ -341,7 +341,6 @@ export const Menu = (): ReactElement => {
         <div className="h-12 flex items-center justify-between px-4 border-b border-igriz-elements-borderColor bg-igriz-elements-background-depth-1 rounded-tr-2xl">
           <div className="text-gray-900 dark:text-white font-medium"></div>
           <div className="flex items-center gap-3">
-            <HelpButton onClick={() => window.open('https://stackblitz-labs.github.io/igriz.diy/', '_blank')} />
             <span className="font-medium text-sm text-igriz-elements-textPrimary truncate">
               {profile?.username || 'Guest User'}
             </span>

@@ -140,16 +140,27 @@
 }
 
 .landing-wallet-btn.connected {
-  border-color: color-mix(in oklab, var(--landing-accent) 40%, rgba(255, 255, 255, 0.18));
-  background: color-mix(in oklab, var(--landing-accent-soft) 60%, rgba(255, 255, 255, 0.06));
+  border-color: rgba(16, 185, 129, 0.6);
+  background: rgba(16, 185, 129, 0.18);
+  color: #bbf7d0;
+}
+
+.landing-wallet-btn.needs-key {
+  border-color: color-mix(in oklab, var(--landing-accent) 58%, rgba(255, 255, 255, 0.18));
+  background: color-mix(in oklab, var(--landing-accent) 22%, rgba(255, 255, 255, 0.05));
+  color: #fecaca;
+}
+
+.landing-wallet-btn.needs-key:hover {
+  background: color-mix(in oklab, var(--landing-accent) 30%, rgba(255, 255, 255, 0.06));
 }
 
 .landing-wallet-btn-dot {
   width: 7px;
   height: 7px;
   border-radius: 999px;
-  background: var(--landing-accent);
-  box-shadow: 0 0 8px color-mix(in oklab, var(--landing-accent) 60%, transparent);
+  background: #10b981;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.7);
 }
 
 .wallet-dropdown {

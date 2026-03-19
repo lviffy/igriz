@@ -658,9 +658,6 @@ export function LandingPage({ onLaunch }: LandingPageProps) {
               )}
             </div>
             <ClientOnly>{() => <WalletButton variant="landing" />}</ClientOnly>
-            <a href="#hero-box" className="landing-nav-cta">
-              Get Started
-            </a>
           </div>
         </nav>
 

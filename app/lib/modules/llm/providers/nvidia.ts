@@ -70,15 +70,13 @@ export default class NvidiaProvider extends BaseProvider {
       defaultApiTokenKey: 'NVIDIA_API_KEY',
     });
 
-    if (!apiKey) {
-      throw `Missing Api Key configuration for ${this.name} provider`;
-    }
-
-    const response = await fetch(`https://integrate.api.nvidia.com/v1/models`, {
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-      },
-    });
+    const response = await fetch(`https://integrate.api.nvidia.com/v1/models`, apiKey
+      ? {
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+          },
+        }
+      : undefined);
 
     const res = (await response.json()) as any;
 
