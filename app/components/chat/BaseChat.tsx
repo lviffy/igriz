@@ -3,7 +3,7 @@
  * Preventing TS checks with files presented in the video for a better presentation.
  */
 import type { JSONValue, Message } from 'ai';
-import React, { type RefCallback, useEffect, useState } from 'react';
+import React, { type RefCallback, useEffect, useRef, useState } from 'react';
 import { ClientOnly } from 'remix-utils/client-only';
 import { Menu } from '~/components/sidebar/Menu.client';
 import { Workbench } from '~/components/workbench/Workbench.client';
@@ -21,7 +21,7 @@ import type { ProviderInfo } from '~/types/model';
 import StarterTemplates from './StarterTemplates';
 import type { ActionAlert, SupabaseAlert, DeployAlert, LlmErrorAlertType } from '~/types/actions';
 import DeployChatAlert from '~/components/deploy/DeployAlert';
-import ChatAlert from './ChatAlert';
+import ChatAlert, { buildActionAlertPrompt } from './ChatAlert';
 import type { ModelInfo } from '~/lib/modules/llm/types';
 import ProgressCompilation from './ProgressCompilation';
 import type { ProgressAnnotation } from '~/types/context';
@@ -146,6 +146,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
     const [progressAnnotations, setProgressAnnotations] = useState<ProgressAnnotation[]>([]);
     const expoUrl = useStore(expoUrlAtom);
     const [qrModalOpen, setQrModalOpen] = useState(false);
+    const autoSentActionAlertsRef = useRef<Set<string>>(new Set());
 
     useEffect(() => {
       if (expoUrl) {
@@ -164,6 +165,25 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
     useEffect(() => {
       console.log(transcript);
     }, [transcript]);
+
+    useEffect(() => {
+      if (!actionAlert || actionAlert.source === 'preview' || !sendMessage || isStreaming) {
+        return;
+      }
+
+      const alertKey =
+        actionAlert.id || `${actionAlert.source ?? 'terminal'}:${actionAlert.description}:${actionAlert.content}`;
+
+      if (autoSentActionAlertsRef.current.has(alertKey)) {
+        return;
+      }
+
+      autoSentActionAlertsRef.current.add(alertKey);
+
+      Promise.resolve(sendMessage({} as any, buildActionAlertPrompt(actionAlert))).finally(() => {
+        clearAlert?.();
+      });
+    }, [actionAlert, clearAlert, isStreaming, sendMessage]);
 
     useEffect(() => {
       onStreamingChange?.(isStreaming);

@@ -9,6 +9,68 @@ import type { igrizShell } from '~/utils/shell';
 
 const logger = createScopedLogger('ActionRunner');
 
+const SHELL_CONTROL_FLOW_PATTERN =
+  /<<[-]?\s*\w+|(^|\n)\s*(if|then|elif|else|fi|for|while|until|do|done|case|esac|select|function)\b|(^|\n)\s*[{}]\s*$/m;
+
+function hasOddTrailingBackslashes(input: string) {
+  let count = 0;
+
+  for (let index = input.length - 1; index >= 0 && input[index] === '\\'; index--) {
+    count++;
+  }
+
+  return count % 2 === 1;
+}
+
+export function splitSequentialShellCommands(commandBlock: string) {
+  const normalized = commandBlock.replace(/\r\n/g, '\n').trim();
+
+  if (!normalized) {
+    return [];
+  }
+
+  if (!normalized.includes('\n') || SHELL_CONTROL_FLOW_PATTERN.test(normalized)) {
+    return [normalized];
+  }
+
+  const commands: string[] = [];
+  let currentCommand: string[] = [];
+
+  const flush = () => {
+    const command = currentCommand.join('\n').trim();
+
+    if (command) {
+      commands.push(command);
+    }
+
+    currentCommand = [];
+  };
+
+  for (const line of normalized.split('\n')) {
+    const trimmedLine = line.trim();
+
+    if (!trimmedLine) {
+      continue;
+    }
+
+    if (trimmedLine.startsWith('#') && currentCommand.length === 0) {
+      continue;
+    }
+
+    currentCommand.push(trimmedLine);
+
+    if (!hasOddTrailingBackslashes(trimmedLine)) {
+      flush();
+    }
+  }
+
+  if (currentCommand.length > 0) {
+    flush();
+  }
+
+  return commands.length > 0 ? commands : [normalized];
+}
+
 export type ActionStatus = 'pending' | 'running' | 'complete' | 'aborted' | 'failed';
 
 export type BaseActionState = igrizAction & {
@@ -37,8 +99,19 @@ type ActionsMap = MapStore<Record<string, ActionState>>;
 class ActionCommandError extends Error {
   readonly _output: string;
   readonly _header: string;
+  readonly failedCommand?: string;
+  readonly remainingCommands: string[];
+  readonly sourceActionType?: 'shell' | 'start' | 'build';
 
-  constructor(message: string, output: string) {
+  constructor(
+    message: string,
+    output: string,
+    context?: {
+      failedCommand?: string;
+      remainingCommands?: string[];
+      sourceActionType?: 'shell' | 'start' | 'build';
+    },
+  ) {
     // Create a formatted message that includes both the error message and output
     const formattedMessage = `Failed To Execute Shell Command: ${message}\n\nOutput:\n${output}`;
     super(formattedMessage);
@@ -46,6 +119,9 @@ class ActionCommandError extends Error {
     // Set the output separately so it can be accessed programmatically
     this._header = message;
     this._output = output;
+    this.failedCommand = context?.failedCommand;
+    this.remainingCommands = context?.remainingCommands ?? [];
+    this.sourceActionType = context?.sourceActionType;
 
     // Maintain proper prototype chain
     Object.setPrototypeOf(this, ActionCommandError.prototype);
@@ -67,6 +143,7 @@ export class ActionRunner {
   #webcontainer: Promise<WebContainer>;
   #currentExecutionPromise: Promise<void> = Promise.resolve();
   #shellTerminal: () => igrizShell;
+  #executionHalted = false;
   runnerId = atom<string>(`${Date.now()}`);
   actions: ActionsMap = map({});
   onAlert?: (alert: ActionAlert) => void;
@@ -100,11 +177,12 @@ export class ActionRunner {
     }
 
     const abortController = new AbortController();
+    const shouldAbortImmediately = this.#executionHalted;
 
     this.actions.setKey(actionId, {
       ...data.action,
-      status: 'pending',
-      executed: false,
+      status: shouldAbortImmediately ? 'aborted' : 'pending',
+      executed: shouldAbortImmediately,
       abort: () => {
         abortController.abort();
         this.#updateAction(actionId, { status: 'aborted' });
@@ -112,9 +190,17 @@ export class ActionRunner {
       abortSignal: abortController.signal,
     });
 
-    this.#currentExecutionPromise.then(() => {
-      this.#updateAction(actionId, { status: 'running' });
-    });
+    if (!shouldAbortImmediately) {
+      this.#currentExecutionPromise.then(() => {
+        const queuedAction = this.actions.get()[actionId];
+
+        if (!queuedAction || queuedAction.status !== 'pending') {
+          return;
+        }
+
+        this.#updateAction(actionId, { status: 'running' });
+      });
+    }
   }
 
   async runAction(data: ActionCallbackData, isStreaming: boolean = false) {
@@ -127,6 +213,11 @@ export class ActionRunner {
 
     if (action.executed) {
       return; // No return value here
+    }
+
+    if (this.#executionHalted) {
+      this.#updateAction(actionId, { status: 'aborted', executed: true });
+      return;
     }
 
     if (isStreaming && action.type !== 'file') {
@@ -151,12 +242,17 @@ export class ActionRunner {
   async #executeAction(actionId: string, isStreaming: boolean = false) {
     const action = this.actions.get()[actionId];
 
+    if (this.#executionHalted && action.status !== 'aborted') {
+      this.#updateAction(actionId, { status: 'aborted', executed: true });
+      return;
+    }
+
     this.#updateAction(actionId, { status: 'running' });
 
     try {
       switch (action.type) {
         case 'shell': {
-          await this.#runShellAction(action);
+          await this.#runShellAction(actionId, action);
           break;
         }
         case 'file': {
@@ -188,26 +284,10 @@ export class ActionRunner {
         case 'start': {
           // making the start app non blocking
 
-          this.#runStartAction(action)
+          this.#runStartAction(actionId, action)
             .then(() => this.#updateAction(actionId, { status: 'complete' }))
             .catch((err: Error) => {
-              if (action.abortSignal.aborted) {
-                return;
-              }
-
-              this.#updateAction(actionId, { status: 'failed', error: 'Action failed' });
-              logger.error(`[${action.type}]:Action failed\n\n`, err);
-
-              if (!(err instanceof ActionCommandError)) {
-                return;
-              }
-
-              this.onAlert?.({
-                type: 'error',
-                title: 'Dev Server Failed',
-                description: err.header,
-                content: err.output,
-              });
+              this.#handleActionFailure(actionId, action, err);
             });
 
           /*
@@ -224,30 +304,14 @@ export class ActionRunner {
         status: isStreaming ? 'running' : action.abortSignal.aborted ? 'aborted' : 'complete',
       });
     } catch (error) {
-      if (action.abortSignal.aborted) {
-        return;
-      }
-
-      this.#updateAction(actionId, { status: 'failed', error: 'Action failed' });
-      logger.error(`[${action.type}]:Action failed\n\n`, error);
-
-      if (!(error instanceof ActionCommandError)) {
-        return;
-      }
-
-      this.onAlert?.({
-        type: 'error',
-        title: 'Dev Server Failed',
-        description: error.header,
-        content: error.output,
-      });
+      this.#handleActionFailure(actionId, action, error);
 
       // re-throw the error to be caught in the promise chain
       throw error;
     }
   }
 
-  async #runShellAction(action: ActionState) {
+  async #runShellAction(actionId: string, action: ActionState) {
     if (action.type !== 'shell') {
       unreachable('Expected shell action');
     }
@@ -259,27 +323,38 @@ export class ActionRunner {
       unreachable('Shell terminal not found');
     }
 
-    // Pre-validate command for common issues
-    const validationResult = await this.#validateShellCommand(action.content);
+    const commands = splitSequentialShellCommands(action.content);
 
-    if (validationResult.shouldModify && validationResult.modifiedCommand) {
-      logger.debug(`Modified command: ${action.content} -> ${validationResult.modifiedCommand}`);
-      action.content = validationResult.modifiedCommand;
-    }
+    for (const [index, originalCommand] of commands.entries()) {
+      let command = originalCommand;
 
-    const resp = await shell.executeCommand(this.runnerId.get(), action.content, () => {
-      logger.debug(`[${action.type}]:Aborting Action\n\n`, action);
-      action.abort();
-    });
-    logger.debug(`${action.type} Shell Response: [exit code:${resp?.exitCode}]`);
+      const validationResult = await this.#validateShellCommand(command);
 
-    if (resp?.exitCode != 0) {
-      const enhancedError = this.#createEnhancedShellError(action.content, resp?.exitCode, resp?.output);
-      throw new ActionCommandError(enhancedError.title, enhancedError.details);
+      if (validationResult.shouldModify && validationResult.modifiedCommand) {
+        logger.debug(`Modified command: ${command} -> ${validationResult.modifiedCommand}`);
+        command = validationResult.modifiedCommand;
+      }
+
+      const resp = await shell.executeCommand(this.runnerId.get(), command, () => {
+        logger.debug(`[${action.type}]:Aborting Action\n\n`, action);
+        action.abort();
+      });
+      logger.debug(`${action.type} Shell Response: [exit code:${resp?.exitCode}] (${command})`);
+
+      if (resp?.exitCode != 0) {
+        const enhancedError = this.#createEnhancedShellError(command, resp?.exitCode, resp?.output);
+        const remainingCommands = this.#getRemainingQueuedCommands(actionId, commands.slice(index + 1));
+
+        throw new ActionCommandError(enhancedError.title, enhancedError.details, {
+          failedCommand: command,
+          remainingCommands,
+          sourceActionType: 'shell',
+        });
+      }
     }
   }
 
-  async #runStartAction(action: ActionState) {
+  async #runStartAction(actionId: string, action: ActionState) {
     if (action.type !== 'start') {
       unreachable('Expected shell action');
     }
@@ -312,7 +387,11 @@ export class ActionRunner {
         });
 
         if (installResp?.exitCode != 0) {
-          throw new ActionCommandError('Failed To Install Dependencies', installResp?.output || 'No Output Available');
+          throw new ActionCommandError('Failed To Install Dependencies', installResp?.output || 'No Output Available', {
+            failedCommand: installCommand,
+            remainingCommands: this.#getRemainingQueuedCommands(actionId),
+            sourceActionType: 'start',
+          });
         }
 
         resp = await shell.executeCommand(this.runnerId.get(), action.content, () => {
@@ -325,7 +404,11 @@ export class ActionRunner {
     logger.debug(`${action.type} Shell Response: [exit code:${resp?.exitCode}]`);
 
     if (resp?.exitCode != 0) {
-      throw new ActionCommandError('Failed To Start Application', resp?.output || 'No Output Available');
+      throw new ActionCommandError('Failed To Start Application', resp?.output || 'No Output Available', {
+        failedCommand: action.content.trim(),
+        remainingCommands: this.#getRemainingQueuedCommands(actionId),
+        sourceActionType: 'start',
+      });
     }
 
     return resp;
@@ -365,6 +448,60 @@ export class ActionRunner {
     const actions = this.actions.get();
 
     this.actions.setKey(id, { ...actions[id], ...newState });
+  }
+
+  #handleActionFailure(actionId: string, action: ActionState, error: unknown) {
+    if (action.abortSignal.aborted) {
+      return;
+    }
+
+    this.#executionHalted = true;
+    this.#abortQueuedActionsAfter(actionId);
+    this.#updateAction(actionId, { status: 'failed', error: 'Action failed' });
+    logger.error(`[${action.type}]:Action failed\n\n`, error);
+
+    if (!(error instanceof ActionCommandError)) {
+      return;
+    }
+
+    this.onAlert?.({
+      id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      type: 'error',
+      title: error.sourceActionType === 'start' ? 'Dev Server Failed' : 'Terminal Command Failed',
+      description: error.header,
+      content: error.output,
+      failedCommand: error.failedCommand,
+      remainingCommands: error.remainingCommands,
+      source: 'terminal',
+    });
+  }
+
+  #abortQueuedActionsAfter(actionId: string) {
+    for (const [queuedActionId, queuedAction] of Object.entries(this.actions.get())) {
+      if (Number(queuedActionId) <= Number(actionId)) {
+        continue;
+      }
+
+      if (queuedAction.executed) {
+        continue;
+      }
+
+      this.#updateAction(queuedActionId, {
+        status: 'aborted',
+        executed: true,
+      });
+    }
+  }
+
+  #getRemainingQueuedCommands(actionId: string, remainingCurrentCommands: string[] = []) {
+    const queuedCommands = Object.entries(this.actions.get())
+      .sort(([leftId], [rightId]) => Number(leftId) - Number(rightId))
+      .filter(([queuedActionId, queuedAction]) => {
+        return Number(queuedActionId) > Number(actionId) && !queuedAction.executed && ['shell', 'start'].includes(queuedAction.type);
+      })
+      .flatMap(([, queuedAction]) => splitSequentialShellCommands(queuedAction.content));
+
+    return [...remainingCurrentCommands, ...queuedCommands].map((command) => command.trim()).filter(Boolean);
   }
 
   async getFileHistory(filePath: string): Promise<FileHistory | null> {

@@ -1,6 +1,6 @@
 import type { Change } from 'diff';
 
-export type ActionType = 'file' | 'shell' | 'supabase';
+export type ActionType = 'file' | 'shell' | 'start' | 'build' | 'supabase';
 
 export interface BaseAction {
   content: string;
@@ -39,6 +39,9 @@ export interface ActionAlert {
   title: string;
   description: string;
   content: string;
+  id?: string;
+  failedCommand?: string;
+  remainingCommands?: string[];
   source?: 'terminal' | 'preview'; // Add source to differentiate between terminal and preview errors
 }
 

@@ -8,8 +8,26 @@ interface Props {
   postMessage: (message: string) => void;
 }
 
+export function buildActionAlertPrompt(alert: ActionAlert) {
+  const source = alert.source === 'preview' ? 'preview' : 'terminal';
+  const descriptionSection = alert.description ? `Error summary: ${alert.description}\n\n` : '';
+  const failedCommandSection = alert.failedCommand
+    ? `Failed command:\n\`\`\`sh\n${alert.failedCommand}\n\`\`\`\n\n`
+    : '';
+  const remainingCommandsSection =
+    alert.remainingCommands && alert.remainingCommands.length > 0
+      ? `Remaining queued commands:\n\`\`\`sh\n${alert.remainingCommands.join('\n')}\n\`\`\`\n\n`
+      : '';
+  const instruction =
+    source === 'terminal'
+      ? 'Fix this terminal error, rerun the failed command, and only continue with the remaining queued commands after that command succeeds.'
+      : 'Fix this preview error.';
+
+  return `*${instruction}*\n\n${descriptionSection}${failedCommandSection}${remainingCommandsSection}\`\`\`${source === 'preview' ? 'js' : 'sh'}\n${alert.content}\n\`\`\`\n`;
+}
+
 export default function ChatAlert({ alert, clearAlert, postMessage }: Props) {
-  const { description, content, source } = alert;
+  const { description, source } = alert;
 
   const isPreview = source === 'preview';
   const title = isPreview ? 'Preview Error' : 'Terminal Error';
@@ -69,11 +87,7 @@ export default function ChatAlert({ alert, clearAlert, postMessage }: Props) {
             >
               <div className={classNames(' flex gap-2')}>
                 <button
-                  onClick={() =>
-                    postMessage(
-                      `*Fix this ${isPreview ? 'preview' : 'terminal'} error* \n\`\`\`${isPreview ? 'js' : 'sh'}\n${content}\n\`\`\`\n`,
-                    )
-                  }
+                  onClick={() => postMessage(buildActionAlertPrompt(alert))}
                   className={classNames(
                     `px-2 py-1.5 rounded-md text-sm font-medium`,
                     'bg-igriz-elements-button-primary-background',

@@ -165,7 +165,7 @@ The year is 2025.
   5. Structure: <igrizArtifact id="kebab-case" title="Title"><igrizAction>...</igrizAction></igrizArtifact>
 
   Action Types:
-    - shell: Running commands (use --yes for npx/npm create, && for sequences, NEVER re-run dev servers)
+    - shell: Running one non-dev command per action (use --yes for npx/npm create, NEVER chain commands with &&, NEVER re-run dev servers)
     - start: Starting project (use ONLY for project startup, LAST action)
     - file: Creating/updating files (add filePath and contentType attributes)
 
@@ -179,6 +179,7 @@ The year is 2025.
     - Create files BEFORE shell commands that depend on them
     - Update package.json FIRST, then install dependencies
     - Configuration files before initialization commands
+    - If multiple shell commands are needed, emit multiple shell actions in the exact execution order
     - Start command LAST
 
   Dependencies:
