@@ -2,10 +2,11 @@
   <img src="imgs/logo.png" alt="Igriz Logo" width="280" />
 </p>
 
-# Igriz
+# IGRIZ — AI dApp Builder for Polkadot Hub EVM
 
-Igriz is an AI-driven dApp builder focused on **Polkadot Hub EVM** workflows.  
-It converts natural language prompts into Solidity contracts, frontend code, and shell/file actions, then executes those actions inside an in browser **WebContainer** workspace.
+Igriz turns natural language prompts into fully deployable Polkadot Hub dApps inside your browser, no local toolchain needed.
+
+Describe what you want to build. Igriz writes the Solidity contracts and frontend code, runs an automated security audit, and deploys to Polkadot Hub TestNet in one flow.
 
 <table>
   <tr>
@@ -21,7 +22,10 @@ It converts natural language prompts into Solidity contracts, frontend code, and
 ## Table of Contents
 
 - [What This Project Does](#what-this-project-does)
+- [What Makes Igriz Different](#what-makes-igriz-different)
 - [Core Capabilities](#core-capabilities)
+- [Target Network](#target-network)
+- [Tech Stack](#tech-stack)
 - [Architecture](#architecture)
 - [How x402 Payments Work](#how-x402-payments-work)
 - [API Endpoints](#api-endpoints)
@@ -35,7 +39,15 @@ It converts natural language prompts into Solidity contracts, frontend code, and
 
 ## What This Project Does
 
-Igriz provides a chat-to-code loop:
+**Chat-to-code:** Describe a dApp in plain language. The AI streams Solidity + frontend code into a live in-browser WebContainer workspace with a file tree, editor, terminal, and preview.
+
+**OpenZeppelin-aware audit:** Every generated contract is audited against OpenZeppelin best practices and security patterns. The AI flags deviations from OZ standards and suggests fixes using OpenZeppelin primitives — moving beyond boilerplate tokens toward meaningful application logic. Findings are bucketed by severity: critical, high, medium, low, and Polkadot-specific checks.
+
+**Fix and redeploy:** One click applies the AI-suggested fix (with OpenZeppelin-aligned remediation), recompiles, and redeploys. Unresolved findings block deployment.
+
+**Export:** Push to GitHub or deploy to Vercel directly from the UI.
+
+The full chat-to-code loop:
 
 1. User sends a prompt in chat.
 2. LLM streams a response that can include `<igrizArtifact>` + `<igrizAction>` tags.
@@ -44,18 +56,19 @@ Igriz provides a chat-to-code loop:
 5. Generated project appears in the integrated file tree/editor/terminal/preview.
 6. Solidity code can be audited and automatically fixed/redeployed from the UI.
 
-Primary dApp target:
+## What Makes Igriz Different
 
-- Network: `Polkadot Hub TestNet`
-- RPC: `https://services.polkadothub-rpc.com/testnet`
-- Chain ID: `420420417` (`0x1910E881`)
-- Explorer: `https://blockscout-testnet.polkadot.io/`
+Most AI coding tools are pay-per-seat or require an API key tied to a subscription. Igriz uses the **x402 micropayment protocol** each message costs **$0.001 USDC**, settled instantly on-chain. No account, no subscription, no API key. You pay for exactly what you use, nothing more.
+
+Your private key is held in memory for the session only. It is never written to disk, logged, or stored in any database.
+
+This makes Igriz the first AI dApp builder with a fully on-chain, pay-as-you-go access model a product that eats its own cooking by using Web3 infrastructure to gate access to a Web3 tool.
 
 ## Core Capabilities
 
 ### 1) AI Generation with Provider/Model Selection
 
-- Provider options: `Groq`, `OpenRouter`, `Google Gemini`
+- Provider options: `Groq`, `OpenRouter`, `Google Gemini`, `Nvidia`, `Ollama`
 - Server-side key fallback: `*_API_KEY` then `*_API_KEY_2`
 - Streaming responses with continuation when max token segment is reached
 
@@ -68,7 +81,7 @@ Primary dApp target:
 
 ### 3) Solidity Audit Workflow
 
-- `POST /api/audit` runs an LLM-based contract audit
+- `POST /api/audit` runs an LLM-based contract audit against OpenZeppelin best practices
 - Returns structured severity buckets:
   - `critical`
   - `high`
@@ -79,7 +92,7 @@ Primary dApp target:
 
 ### 4) Fix and Redeploy
 
-- `POST /api/audit-fix` returns revised Solidity source from findings
+- `POST /api/audit-fix` returns revised Solidity source from findings, with OpenZeppelin-aligned remediation
 - UI action applies fix and queues:
   1. `node scripts/compile.cjs`
   2. `rm -f src/contracts/deployedContract.json && node scripts/deploy.cjs`
@@ -90,7 +103,32 @@ Primary dApp target:
 - Vercel token validation + direct deployment
 - Deploy button can be blocked by unresolved audit acknowledgment state
 
+## Target Network
+
+```
+Network:   Polkadot Hub TestNet
+RPC:       https://services.polkadothub-rpc.com/testnet
+Chain ID:  420420417 (0x1910E881)
+Explorer:  https://blockscout-testnet.polkadot.io/
+```
+
+> Polkadot Hub EVM supports contracts up to **100KB** (vs Ethereum's 24KB limit), making it well-suited for the kind of feature-rich contracts Igriz generates.
+
+## Tech Stack
+
+- **Remix + React + TypeScript**
+- **WebContainer** (in-browser Node.js runtime)
+- **OpenZeppelin contracts** (audit reference + fix suggestions)
+- **LLM providers:** Groq, OpenRouter, Google Gemini, Nvidia, Ollama
+- **x402** for micropayment gating
+- **Chat persistence** on Supabase and IndexedDB
+- **Deployed on Vercel**
+
 ## Architecture
+
+<p align="center">
+  <img src="imgs/architecture.png" alt="Igriz Architecture Diagram" width="700" />
+</p>
 
 ### Frontend
 
@@ -120,11 +158,12 @@ Primary dApp target:
 ### Persistence
 
 - IndexedDB chat history (`igrizHistory` DB, `chats` store)
+- Supabase for extended chat persistence
 - Route-based session restore via `/chat/:id`
 
 ## How x402 Payments Work
 
-This app can gate `POST /api/chat` behind x402 payment verification and settlement.
+This app gates `POST /api/chat` behind x402 payment verification and settlement.
 
 ### Client Side
 
@@ -159,11 +198,7 @@ Flow inside `enforceX402ForChat`:
 - Default network: `eip155:84532` (Base Sepolia)
 - Default facilitator: `https://x402.org/facilitator`
 
-Important implementation note:
-
-- **Payment rail default network** (`eip155:84532`, Base Sepolia) is independent from
-  **generated dApp target network** (Polkadot Hub TestNet `420420417`).
-- This is why payment errors in chat mention Base Sepolia USDC requirements.
+> **Note:** The **payment rail default network** (`eip155:84532`, Base Sepolia) is independent from the **generated dApp target network** (Polkadot Hub TestNet `420420417`). This is why payment errors in chat mention Base Sepolia USDC requirements.
 
 ## API Endpoints
 
@@ -261,10 +296,9 @@ X402_FACILITATOR_URL=https://x402.org/facilitator
 X402_FACILITATOR_BEARER_TOKEN=
 ```
 
-Notes:
-
-- `X402_PAY_TO` is required when `X402_ENABLED=true`.
-- If using Coinbase CDP facilitator URL, bearer auth may be required; code falls back to public facilitator when missing.
+> **Notes:**
+> - `X402_PAY_TO` is required when `X402_ENABLED=true`.
+> - If using Coinbase CDP facilitator URL, bearer auth may be required; code falls back to public facilitator when missing.
 
 ## Scripts
 
