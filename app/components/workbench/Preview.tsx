@@ -2,6 +2,7 @@ import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { useStore } from '@nanostores/react';
 import { IconButton } from '~/components/ui/IconButton';
 import { workbenchStore } from '~/lib/stores/workbench';
+import { chatStore } from '~/lib/stores/chat';
 import { PortDropdown } from './PortDropdown';
 import { ScreenshotSelector } from './ScreenshotSelector';
 import { expoUrlAtom } from '~/lib/stores/qrCodeStore';
@@ -619,6 +620,8 @@ export const Preview = memo(({ setSelectedElement }: PreviewProps) => {
     };
   }, [showDeviceFrameInPreview]);
 
+  const [frameworkError, setFrameworkError] = useState<string | null>(null);
+
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       if (event.data.type === 'INSPECTOR_READY') {
@@ -637,6 +640,10 @@ export const Preview = memo(({ setSelectedElement }: PreviewProps) => {
         navigator.clipboard.writeText(element.displayText).then(() => {
           setSelectedElement?.(element);
         });
+      } else if (event.data.type === 'PREVIEW_FRAMEWORK_ERROR') {
+        setFrameworkError(event.data.text);
+      } else if (event.data.type === 'PREVIEW_FRAMEWORK_ERROR_CLEARED') {
+        setFrameworkError(null);
       }
     };
 
@@ -664,6 +671,40 @@ export const Preview = memo(({ setSelectedElement }: PreviewProps) => {
     <div ref={containerRef} className={`w-full h-full flex flex-col relative`}>
       {isPortDropdownOpen && (
         <div className="z-iframe-overlay w-full h-full absolute" onClick={() => setIsPortDropdownOpen(false)} />
+      )}
+      {frameworkError && (
+        <div className="absolute top-12 left-4 right-4 z-50 flex items-start gap-3 bg-igriz-elements-background-depth-2 border border-red-500/50 p-4 rounded-lg shadow-xl text-red-500" style={{ backdropFilter: 'blur(8px)' }}>
+          <div className="i-ph:warning-circle w-6 h-6 mt-0.5 flex-shrink-0" />
+          <div className="flex-grow flex flex-col gap-2 overflow-hidden">
+            <div className="text-sm font-medium">Preview Render Error</div>
+            <div className="text-xs opacity-80 break-words whitespace-pre-wrap max-h-32 overflow-y-auto bg-black/10 p-2 rounded rounded-md" title={frameworkError}>{frameworkError}</div>
+            <div className="flex gap-2 mt-2">
+              <button
+                onClick={() => {
+                  const prompt = `*Fix this preview error* \n\`\`\`text\n${frameworkError}\n\`\`\`\nPlease fix this error and restart the dev server or the preview so I can view the fixed version.`;
+                  
+                  // Open chat if not open
+                  chatStore.setKey('showChat', true);
+                  
+                  // Dispatch custom event to auto-send
+                  document.dispatchEvent(new CustomEvent('auto-send-prompt', { detail: { prompt } }));
+                  
+                  setFrameworkError(null); // Dismiss until it changes again
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500 text-white rounded-md text-xs font-medium hover:bg-red-600 transition-colors shadow-sm"
+              >
+                <div className="i-ph:wrench w-4 h-4" />
+                Fix with igriz
+              </button>
+              <button
+                onClick={() => setFrameworkError(null)}
+                className="px-3 py-1.5 bg-transparent border border-red-500 text-red-500 hover:bg-red-500/10 rounded-md text-xs font-medium transition-colors"
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        </div>
       )}
       <div className="bg-igriz-elements-background-depth-2 p-2 flex items-center gap-2">
         <div className="flex items-center gap-2">
